@@ -232,6 +232,13 @@ class Tomonoid
 			      std::vector<Tomonoid*> &res,
 			      Tomonoid *primary);
   
+  void assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
+		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
+		  std::set<std::set<TableElement>*>& ptrset,
+		  std::vector<Tomonoid*> &res,
+		  Tomonoid *primary,
+		  std::unordered_map< TableElement, std::set< TableElement >* >& telToSet);
+  
   void goThroughGraph(std::set< std::set< TableElement >* >& current,
 		      std::unordered_map< std::set< TableElement >*, 
 		      std::set< std::set< TableElement >* >* >& next, 

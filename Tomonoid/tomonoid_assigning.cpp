@@ -352,7 +352,7 @@ void printSets(std::map< std::set< TableElement >*, std::set< std::set< TableEle
   std::cerr << std::endl;
 }
 
-void assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
+void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
 		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
 		  std::set<std::set<TableElement>*>& ptrset,
 		  std::vector<Tomonoid*> &res,
@@ -362,7 +362,18 @@ void assignOthers(std::map< std::set< TableElement >*, std::set< std::set< Table
     // od tech, co maji "aktualni" revert nulovy (tj. jsou na zacatku grafu)
   // volani rekurzivne, vzdycky odebirat vynucene sety! + pridat jeste nejaky set pracovnich pointeru
   // vybrane mnozine se priradi jednicka
-  
+  std::unordered_map<std::set<TableElement>*, unsigned int> sizes_map;
+  for (auto it = precededSets.begin(); it != precededSets.end(); ++it)
+  {
+    std::set<TableElement> *el_class = (*it).first;
+    auto set_iterator = revertSets.find(el_class);
+    std::set< std::set< TableElement >* > *sets = (*set_iterator).second;
+    unsigned int cnt = sets->size();
+    sizes_map.insert(std::make_pair(el_class, cnt));
+#ifdef DEBUG
+    std::cerr << "For set " << el_class << " there are " << cnt << " entries in revert." << std::endl;
+#endif
+  }
 }
 
 void Tomonoid::assignThroughCorners(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,

@@ -1009,9 +1009,9 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
     //make graph
     //if (setCount <= 8)
     #ifdef DEBUG
-    std::cerr << "assignThroughCorners" << std::endl;
+    std::cerr << "assignThroughOthers" << std::endl;
     #endif
-    assignThroughCorners(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
+    assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
     //std::cout << this << " has " << setCount << " different sets" << std::endl;
   }
   
