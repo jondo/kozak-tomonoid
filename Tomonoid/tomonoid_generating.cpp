@@ -172,7 +172,9 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   
   if (!atomsOk)
   {
+    #ifdef DEBUG
     std::cout << "CANNOT ACCEPT THIS EXTENSION!" << std::endl;
+    #endif
        std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = precededSets.begin();
     for (iiit; iiit != precededSets.end(); ++iiit)
     {
@@ -1009,9 +1011,11 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
     //make graph
     //if (setCount <= 8)
     #ifdef DEBUG
-    std::cerr << "assignThroughOthers" << std::endl;
+    std::cerr << "assignThroughCorners" << std::endl;
     #endif
-    assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
+    assignThroughCorners(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
+    //TODO ale tohle ma bejt cil:
+    //assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
     //std::cout << this << " has " << setCount << " different sets" << std::endl;
   }
   
