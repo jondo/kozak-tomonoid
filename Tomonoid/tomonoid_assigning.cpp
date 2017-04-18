@@ -352,6 +352,90 @@ void printSets(std::map< std::set< TableElement >*, std::set< std::set< TableEle
   std::cerr << std::endl;
 }
 
+void recursiveTomonoidation(std::set<std::set<TableElement>*> *curr_preceded, 
+			    std::map<TableElement, std::shared_ptr<const Element>> *rm,
+			    std::unordered_set<std::set<TableElement>*> &assignedSet,
+			    std::shared_ptr<const Element> atom,
+			    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets,
+			    std::set<std::set<TableElement>*>& nextZer,
+			    std::unordered_map<std::set<TableElement>*, unsigned int> &sizes_map,
+			    bool getLower
+)
+{
+  auto end = assignedSet.end();
+  for (auto it = curr_preceded->begin(); it != curr_preceded->end(); ++it)
+  {
+    std::set<TableElement> *eq_class = *it;
+    if (getLower)
+    {
+      --sizes_map[eq_class];
+      if (sizes_map[eq_class] == 0)
+      {
+	nextZer.insert(eq_class);
+      }
+    }
+    if (assignedSet.find(eq_class) == end)
+    {
+      assignedSet.insert(eq_class);
+      for (auto it2 = eq_class->begin(); it2 != eq_class->end(); ++it2)
+      {
+	rm->insert(std::make_pair(*it2, atom));
+      }
+      auto it2 = precededSets.find(eq_class);
+      std::set< std::set< TableElement >* > *gosh = (*it2).second;
+      recursiveTomonoidation(gosh, rm, assignedSet, atom, precededSets, nextZer, sizes_map, false);
+    }
+  }
+}
+
+void Tomonoid::assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &revertSets,
+		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets,
+		  std::unordered_set<std::set<TableElement>*> &assignedSet,
+		  std::vector<Tomonoid*> &res,
+		  Tomonoid *primary,
+		  std::unordered_map<std::set<TableElement>*, unsigned int> &sizes_map,
+		  std::set<std::set<TableElement>*> &zeros,
+		  std::shared_ptr<const Element> atom
+		)
+{
+  if (zeros.empty() )
+  {
+    return;
+  }
+  std::set<std::set<TableElement>*> next_zer(zeros);
+  std::unordered_set<std::set<TableElement>*> orig_assig(assignedSet);
+  for (auto zit = zeros.begin(); zit != zeros.end(); ++zit)
+  {
+    std::set<TableElement> *current = *zit;
+    next_zer.erase(current);
+    Tomonoid *tnew = new Tomonoid(*primary);
+    results_map *rm = new results_map(primary->importantResults);
+    // assign 1s in *current set 
+    for (auto it = current->begin(); it != current->end(); ++it)
+    {
+	rm->insert(std::make_pair(*it, atom));
+    }
+    // enforce 1s in preceded sets
+    auto ity = *(precededSets.find(current));
+    std::set<std::set<TableElement>*> *curr_preceded = ity.second;
+    assignedSet.insert(current);
+    recursiveTomonoidation(curr_preceded, rm, assignedSet, atom, precededSets, next_zer, sizes_map, true);
+    tnew->setImportantResults(*rm);
+    delete rm;
+    // recursively assign others
+    assignOthersRecursive(revertSets, precededSets, assignedSet, res, tnew, sizes_map, next_zer, atom);
+    // now act like this is 0 forever and recursively assign others
+    res.push_back(tnew);
+    assignedSet = orig_assig;
+    /*assignOthersRecursive(revertSets, precededSets, assignedSet, res, primary, sizes_map, next_zer, atom);
+    for (auto it = curr_preceded->begin(); it != curr_preceded->end(); ++it)
+    {
+      std::set<TableElement> *eq_class = *it;
+      ++sizes_map[eq_class];
+    }*/
+  }
+}
+
 void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
 		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
 		  std::set<std::set<TableElement>*>& ptrset,
@@ -363,17 +447,29 @@ void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::
   // volani rekurzivne, vzdycky odebirat vynucene sety! + pridat jeste nejaky set pracovnich pointeru
   // vybrane mnozine se priradi jednicka
   std::unordered_map<std::set<TableElement>*, unsigned int> sizes_map;
+  std::set<std::set<TableElement>*> starting_zeros;
   for (auto it = precededSets.begin(); it != precededSets.end(); ++it)
   {
     std::set<TableElement> *el_class = (*it).first;
     auto set_iterator = revertSets.find(el_class);
-    std::set< std::set< TableElement >* > *sets = (*set_iterator).second;
-    unsigned int cnt = sets->size();
+    unsigned int cnt = 0;
+    if (set_iterator != revertSets.end() )
+    {
+      std::set< std::set< TableElement >* > *sets = (*set_iterator).second;
+      cnt = sets->size();
+    }
+    else
+    {
+	starting_zeros.insert(el_class);
+    }
     sizes_map.insert(std::make_pair(el_class, cnt));
-#ifdef DEBUG
+    #ifdef DEBUG
     std::cerr << "For set " << el_class << " there are " << cnt << " entries in revert." << std::endl;
-#endif
+    #endif
   }
+  std::shared_ptr<const Element> atom = ElementCreator::getInstance().getElementPtr(1, this->size + 1);
+  std::unordered_set<std::set<TableElement>*> takenSet;
+  assignOthersRecursive(revertSets, precededSets, takenSet, res, primary, sizes_map, starting_zeros, atom);
 }
 
 void Tomonoid::assignThroughCorners(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,

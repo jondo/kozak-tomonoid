@@ -13,6 +13,8 @@
 #include <string>
 #include <set>
 #include <sstream>
+#include <stack>
+#include <unordered_set>
 
 extern bool onlyArchimedean, onlyCommutative;
 
@@ -231,6 +233,9 @@ class Tomonoid
 			      std::set<std::set<TableElement>*>& ptrset,
 			      std::vector<Tomonoid*> &res,
 			      Tomonoid *primary);
+  
+  void assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, std::unordered_set< std::set< TableElement >* >& assignedSet, std::vector< Tomonoid* >& res, Tomonoid* primary, std::unordered_map< std::set< TableElement >*, unsigned int >& sizes_map, std::set< std::set< TableElement >* >& zeros, std::shared_ptr< const Element > atom
+		);
   
   void assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
 		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
