@@ -1,0 +1,41 @@
+
+    <html>
+<style>
+	.file_loader {
+	  padding: 10px;
+	  border: 1px solid #ccc;
+	}
+	.elem {
+	  font-weight: bold;	
+	}
+	table, td, th {
+    	  border: 1px solid black;
+	  border-collapse: collapse;
+	}
+	td, th {min-width: 15px; text-align: center;}
+	body {margin-left: 15px; margin-top: 15px;}
+	.loader {margin-bottom: 5px;}
+	.checker {margin-top: 5px;}
+	.output {margin-top: 5px;}
+</style>
+    <head>
+    
+    </head>
+    <body>
+<div id='file_loader'>
+    <input type='file' accept='text/plain' onchange='openFile(event)' class = 'loader'><br>
+	<div id='file_info'>
+	</div>
+    </div>
+<div id = 'checker' class='checker'>
+	<input id='idin' type='number' name='tomoid' onchange='readIt()'><input type='button' value='Check' onclick='readIt()'>
+	<!--<input type='button' value = '-' onclick=moveRead(-1)>
+	<input type='button' value = '+' onclick=moveRead(1)><i<br>-->
+</div>
+	<div id='output' class = 'output'>
+    ...
+    </div>
+    </body>
+	<script src="toomo.js">
+    </script>
+    </html>
