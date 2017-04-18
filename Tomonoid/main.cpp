@@ -404,6 +404,8 @@ Tomonoid* control_reader()
   return t;
 }
 
+bool help = false;
+
 /*
  * Possible arguments.
  * -c = only commutative
@@ -415,6 +417,9 @@ Tomonoid* control_reader()
 int main(int argc, char **argv) {
   
   readArgs(argc, argv);
+  
+  if (help == true) return 0;
+  
   TomonoidPrinter tp;
   
   //Tomonoid *t7 = createt9Tomo();
@@ -551,6 +556,21 @@ int main(int argc, char **argv) {
     std::cerr << "finished computation at " << std::ctime(&end_time)
               << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
+  return 0;
+}
+
+void printHelp()
+{
+  static const std::string help = "Tomonoid generator.\nARGUMENTS LIST (all are optional):";
+  const unsigned int width = 15;
+  std::cerr << help << std::endl;
+  std::cerr << std::setw(width) << std::left << "-a" << "Generate only archimedean monoids." << std::endl;
+  std::cerr << std::setw(width) << "-max [NUM]" 
+  << "Maximum levels of depth search (How many new elements to add at lowest level)." << std::endl;
+  std::cerr << std::setw(width) << "-o [FILENAME]" << "Name of output file (if not specified, generic file is created)." << std::endl;
+  std::cerr << std::setw(width) << "-i [FILENAME]" << "Name of input file (must be succeeded by -id)." << std::endl;
+  std::cerr << std::setw(width) << "-id [ID]" << "ID of root tomonoid for current session." << std::endl;
+  std::cerr << std::setw(width) << "-multi" << "Enable multi-threading." << std::endl;
 }
 
 void readArgs(int argc, char** argv)
@@ -671,10 +691,15 @@ void readArgs(int argc, char** argv)
       multi = true;
       std::cerr << "Multi-threading enabled." << std::endl;
     }
+    else if (command == "-h" || command == "--help")
+    {
+      printHelp();
+      help = true;
+    }
     else // Unknown option
     {
       std::string unk_option(argv[i]);
-      std::cerr << "Unknown or wrongly placed option " << unk_option << " will be ignored." << std::endl;
+      std::cerr << "Unknown or wrongly placed option " << unk_option << " will be ignored. See -h or --help." << std::endl;
     }
   }
 }
