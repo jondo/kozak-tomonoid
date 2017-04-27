@@ -267,8 +267,12 @@ class Tomonoid
   
   void doAssignmentLoop(std::set<std::set<TableElement>*>& set,
 		      results_map &newmap,
-		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets
-);
+		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets);
+  
+  void markToDelete(std::set< TableElement >* current, 
+		    std::unordered_set< std::set< TableElement >* >* toBeDeleted, 
+		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
+
   
 public:
   Tomonoid();

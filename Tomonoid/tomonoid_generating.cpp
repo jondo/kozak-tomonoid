@@ -41,7 +41,7 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   
   mergeAssociatedValues(associatedValues, setToTel, telToSet);
   
-  /*
+#ifdef VERBOSE
   std::cout << "Go print" << std::endl;
   
   std::cout << "Printing zero ends" << std::endl;
@@ -75,7 +75,8 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   for (int i = 0; i < this->size - 1; i++)
   {
     std::cout << i << ": " <<  rowQEnds[i] << std::endl; 
-  }*/
+  }
+#endif
   
   
   //TomonoidPrinter tp;
@@ -182,7 +183,8 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
     #ifdef DEBUG
     std::cout << "CANNOT ACCEPT THIS EXTENSION!" << std::endl;
     #endif
-       std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = precededSets.begin();
+    
+    std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = precededSets.begin();
     for (iiit; iiit != precededSets.end(); ++iiit)
     {
       std::set<TableElement>* key = (*iiit).first;
@@ -197,12 +199,12 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
       delete setDusets;
     }
   
-  for (std::set<std::set<TableElement>*>::iterator it = ptrset.begin(); it != ptrset.end(); ++it)
-  {
-    std::set<TableElement> *setTel = (*it);
-    delete setTel;
-    iter++;
-  }
+    for (std::set<std::set<TableElement>*>::iterator it = ptrset.begin(); it != ptrset.end(); ++it)
+    {
+      std::set<TableElement> *setTel = (*it);
+      delete setTel;
+      iter++;
+    }
     return; // This is invalid.
   }
   assignZeros(ptrset, precededSets, revertSets);
@@ -811,15 +813,41 @@ bool Tomonoid::assignAtom(std::set<std::set<TableElement>*>& ptrset,
   return true;
 }
 
+void Tomonoid::markToDelete(std::set<TableElement> *current,
+			    std::unordered_set<std::set<TableElement>*> *toBeDeleted,
+			    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
+)
+{
+  if (toBeDeleted->find(current) == toBeDeleted->end())
+  {
+    toBeDeleted->insert(current);
+    auto rev_it = revertSets.find(current);
+    if (rev_it != revertSets.end() )
+    {
+      std::set< std::set< TableElement >* > *value = (*rev_it).second;
+      for (auto it = value->begin(); it != value->end(); ++it)
+      {
+	std::set<TableElement> *next = *it;
+	markToDelete(next, toBeDeleted, revertSets);
+      }
+    }
+  }
+}
+
 void Tomonoid::assignZeros(std::set<std::set<TableElement>*>& ptrset,
 			   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
 			   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
 )
 {
-  std::set<std::set<TableElement>*> toBeDeleted;
+  std::unordered_set<std::set<TableElement>*> *toBeDeleted = new std::unordered_set<std::set<TableElement>*>();
   for (std::set<std::set<TableElement>*>::iterator ejty = ptrset.begin(); ejty != ptrset.end(); ++ejty)
   {
      std::set<TableElement>* setTel = *ejty;
+     if (toBeDeleted->find(setTel) != toBeDeleted->end())
+     {
+       // already marked to be deleted
+       continue;
+     }
      //std::cout << "Checking setTel " << setTel << std::endl;
      for (std::set<TableElement>::iterator teit = setTel->begin(); teit != setTel->end(); ++teit)
      {
@@ -832,35 +860,20 @@ void Tomonoid::assignZeros(std::set<std::set<TableElement>*>& ptrset,
 	if (zeroCol[left_pos] != NOT_PRESENT && zeroCol[left_pos] >= right_pos)
 	{
 	  // this associated set is in zeroed area
-	  toBeDeleted.insert(setTel);
-	  
-	  // AND also all sets that preced setTel must be deleted (they are before it, but setTel is always zero
-	  // so must be those
-	  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >::iterator iit = revertSets.find(setTel);
-	  if (iit != revertSets.end() )
-	  {
-	    std::set< std::set< TableElement >* >* nextset = (*iit).second;
-	    for (std::set< std::set< TableElement >* >::iterator it = nextset->begin(); it != nextset->end(); ++it)
-	    {
-	      std::set< TableElement > *nextDel = *it;
-	      toBeDeleted.insert(nextDel);
-	    }
-	    //revertSets.erase(setTel);
-	    //precededSets.erase(setTel);
-	    //delete nextset;
-	  }
+	  // so recursively mark all in revert sets to be deleted
+	  markToDelete(setTel, toBeDeleted, revertSets);
 	  
 	  break;
 	}
      }
   }
   
-  for (std::set<std::set<TableElement>*>::iterator it = toBeDeleted.begin(); it != toBeDeleted.end(); ++it)
+  for (auto it = toBeDeleted->begin(); it != toBeDeleted->end(); ++it)
   {
     std::set<TableElement> *toDelptr = *it;
-    
-   // std::cout << "We should erase " << toDelptr << std::endl;
-    
+#ifdef VERBOSE
+    std::cout << "We should erase " << toDelptr << std::endl;
+#endif
     ptrset.erase(toDelptr);
     
     std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >::iterator rIt, pIt;
@@ -896,7 +909,7 @@ void Tomonoid::assignZeros(std::set<std::set<TableElement>*>& ptrset,
     
     delete toDelptr;
   }
-  
+  delete toBeDeleted;
 }
 
 void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
