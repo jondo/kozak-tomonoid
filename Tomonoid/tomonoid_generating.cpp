@@ -81,6 +81,7 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   //TomonoidPrinter tp;
   //tp.printTomonoid(this);
   /*
+#ifdef VERBOSE
   for (associated_mapset::iterator it = associatedValues.begin(); it != associatedValues.end(); ++it)
   {
     std::set<TableElement> &set = (*it).second;
@@ -92,8 +93,9 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
       std::cout << *it2 << std::endl;
     }
     std::cout << "--------" << std::endl;
-  }*/
-  
+  }
+#endif*/
+
   std::unordered_multimap< std::set< TableElement >*, TableElement >::iterator ajty = setToTel.begin();
   std::set<std::set<TableElement>*> ptrset;
   
@@ -110,7 +112,8 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   // base tomonoid for final assignment process and first result too
   Tomonoid *nextTomo = new Tomonoid(this);
   
-  /*int dd = 0;
+#ifdef VERBOSE
+  int dd = 0;
   std::cout << "b4 assignments " << std::endl;
   for (std::set<std::set<TableElement>*>::iterator sit = ptrset.begin(); sit != ptrset.end(); ++sit)
   {
@@ -120,7 +123,8 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
       std::cout << *eas << std::endl;
     }
     dd++;
-  }*/
+  }
+#endif
   
   // assign atoms to associated sets that have to result in atom only (and remove them)
   bool atomsOk = assignAtom(ptrset, telToSet, nextTomo);
@@ -131,7 +135,9 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* > precededSets;
   std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* > revertSets;
   calcPrecedings(precededSets, revertSets, ptrset);
- /* int kk = 0;
+  
+#ifdef VERBOSE
+ int kk = 0;
   std::cout << "after calcPrec rev" << std::endl;
   for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = revertSets.begin(); 
        sit != revertSets.end(); ++sit)
@@ -143,19 +149,19 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
       std::cout << "rev_adres: " << *eas << std::endl;
     }
     kk++;
-  }*/
+  }
+#endif
   
   
-  
-  
+#ifdef VERBOSE
   std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = revertSets.begin();
     for (iiit; iiit != revertSets.end(); ++iiit)
     {
       std::set<TableElement>* key = (*iiit).first;
       std::set<std::set<TableElement>*>* setDusets = (*iiit).second;
       
-      //std::cout << "For associated set " << key << " there are these reverted:" << std::endl;
-      /*
+      std::cout << "For associated set " << key << " there are these reverted:" << std::endl;
+      
       for (std::set<std::set<TableElement>*>::iterator it = setDusets->begin(); it != setDusets->end(); ++it)
       {
 	std::cout << "Connected sets, iteration " << iter << std::endl;
@@ -167,8 +173,9 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
 	    std::cout << *it2 << std::endl;
 	}
 	iter++;
-      }*/
+      }
     }
+#endif
   
   if (!atomsOk)
   {
