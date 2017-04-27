@@ -234,7 +234,7 @@ class Tomonoid
 			      std::vector<Tomonoid*> &res,
 			      Tomonoid *primary);
   
-  void assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, std::unordered_set< std::set< TableElement >* >& assignedSet, std::vector< Tomonoid* >& res, Tomonoid* primary, std::unordered_map< std::set< TableElement >*, unsigned int >& sizes_map, std::set< std::set< TableElement >* >& zeros, std::shared_ptr< const Element > atom
+  void assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, std::unordered_set< std::set< TableElement >* >& assignedSet, std::vector< Tomonoid* >& res, Tomonoid* primary, std::unordered_map< std::set< TableElement >*, unsigned int >& sizes_map, std::stack< std::set< TableElement >* >& zeros, std::shared_ptr< const Element > atom
 		);
   
   void assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
@@ -345,7 +345,7 @@ class ElementCreator
 
   typedef std::vector<std::shared_ptr<const Element>> elements_vector;
 
-  static const unsigned int DEFAULT_SIZE = 64;
+  static const unsigned int DEFAULT_SIZE = 512;
   
   unsigned int size;
   

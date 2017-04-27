@@ -200,6 +200,11 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   }
   assignZeros(ptrset, precededSets, revertSets);
   
+  if (el != Element::top_element || er != Element::top_element)
+  {
+    //zkontrolovat asociativitu?
+  }
+  
   //rebuildPreceded(precededSets, revertSets);
    /*
   int cc = 0;
@@ -1013,9 +1018,9 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
     #ifdef DEBUG
     std::cerr << "assignThroughCorners" << std::endl;
     #endif
-    assignThroughCorners(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
+    //assignThroughCorners(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
     //TODO ale tohle ma bejt cil:
-    //assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
+    assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
     //std::cout << this << " has " << setCount << " different sets" << std::endl;
   }
   

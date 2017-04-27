@@ -388,20 +388,97 @@ void recursiveTomonoidation(std::set<std::set<TableElement>*> *curr_preceded,
   }
 }
 
+void recount(std::set<TableElement> *current, 
+	     std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets,
+	     std::unordered_map<std::set<TableElement>*, unsigned int> &sizes_map,
+	     std::stack<std::set<TableElement>*> &zeros,
+	     std::unordered_set<std::set<TableElement>*> *subtractedSets
+)
+{
+  auto sets_it = precededSets.find(current);
+  std::set<std::set<TableElement>*> *sets = (*sets_it).second;
+  for (auto it = sets->begin(); it != sets->end(); ++it)
+    {
+      std::set<TableElement> *worset = *it;
+      if (subtractedSets->find(worset) == subtractedSets->end() )
+      {
+	int a = --sizes_map[worset];
+	if (a == 0)
+	{
+	  zeros.push(worset);
+	}
+	subtractedSets->insert(worset);
+      }
+      recount(worset, precededSets, sizes_map, zeros, subtractedSets);
+    }
+}
+
+void assignAtoms(std::set<TableElement> *current, 
+		std::map<TableElement, std::shared_ptr<const Element>> *rm,
+		std::shared_ptr<const Element> atom,
+		std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets,
+		std::unordered_set<std::set<TableElement>*> &assignedSets,
+		std::unordered_set<std::set<TableElement>*> *newlyAssignedSets
+)
+{
+  // assign 1s in *current set 
+  for (auto it = current->begin(); it != current->end(); ++it)
+  {
+    rm->insert(std::make_pair(*it, atom));
+  }
+  auto sets_it = precededSets.find(current);
+  
+  std::set<std::set<TableElement>*> *sets = (*sets_it).second;
+  for (auto it = sets->begin(); it != sets->end(); ++it)
+  {
+    std::set<TableElement> *nextSet = *it;
+    if (assignedSets.find(nextSet) == assignedSets.end() )
+    {
+      assignedSets.insert(nextSet);
+      newlyAssignedSets->insert(nextSet);
+      assignAtoms(nextSet, rm, atom, precededSets, assignedSets, newlyAssignedSets);
+    }
+  }
+    
+}
+
 void Tomonoid::assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &revertSets,
 		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets,
 		  std::unordered_set<std::set<TableElement>*> &assignedSet,
 		  std::vector<Tomonoid*> &res,
 		  Tomonoid *primary,
 		  std::unordered_map<std::set<TableElement>*, unsigned int> &sizes_map,
-		  std::set<std::set<TableElement>*> &zeros,
+		  std::stack<std::set<TableElement>*> &zeros,
 		  std::shared_ptr<const Element> atom
 		)
 {
-  if (zeros.empty() )
+  if (!zeros.empty())
   {
-    return;
+    std::set<TableElement> *current = zeros.top();
+    zeros.pop();
+    std::stack<std::set<TableElement>*> original_zeros = std::stack<std::set<TableElement>*>(zeros);
+    Tomonoid *tnew = new Tomonoid(*primary);
+    results_map *rm = new results_map(primary->importantResults);
+    std::unordered_set<std::set<TableElement>*> *newlyAssignedSets = new std::unordered_set<std::set<TableElement>*>();
+    // force recursively all preceded sets to atom
+    assignedSet.insert(current);
+    assignAtoms(current, rm, atom, precededSets, assignedSet, newlyAssignedSets);
+    tnew->setImportantResults(*rm);
+    delete rm;
+    assignOthersRecursive(revertSets, precededSets, assignedSet, res, tnew, sizes_map, zeros, atom);
+    res.push_back(tnew);
+    // and now act like this is set to 0
+    for (auto it = newlyAssignedSets->begin(); it != newlyAssignedSets->end(); ++it)
+    {
+      std::set<TableElement> *worset = *it;
+      assignedSet.erase(worset);
+    }
+    newlyAssignedSets->clear();
+    recount(current, precededSets, sizes_map, original_zeros, newlyAssignedSets);
+    delete newlyAssignedSets;
+    assignOthersRecursive(revertSets, precededSets, assignedSet, res, primary, sizes_map, original_zeros, atom);
   }
+  /*
   std::set<std::set<TableElement>*> next_zer(zeros);
   std::unordered_set<std::set<TableElement>*> orig_assig(assignedSet);
   for (auto zit = zeros.begin(); zit != zeros.end(); ++zit)
@@ -432,8 +509,8 @@ void Tomonoid::assignOthersRecursive(std::map< std::set< TableElement >*, std::s
     {
       std::set<TableElement> *eq_class = *it;
       ++sizes_map[eq_class];
-    }*/
-  }
+    }
+  }*/
 }
 
 void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
@@ -447,7 +524,7 @@ void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::
   // volani rekurzivne, vzdycky odebirat vynucene sety! + pridat jeste nejaky set pracovnich pointeru
   // vybrane mnozine se priradi jednicka
   std::unordered_map<std::set<TableElement>*, unsigned int> sizes_map;
-  std::set<std::set<TableElement>*> starting_zeros;
+  std::stack<std::set<TableElement>*> starting_zeros;
   for (auto it = precededSets.begin(); it != precededSets.end(); ++it)
   {
     std::set<TableElement> *el_class = (*it).first;
@@ -460,7 +537,7 @@ void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::
     }
     else
     {
-	starting_zeros.insert(el_class);
+	starting_zeros.push(el_class);
     }
     sizes_map.insert(std::make_pair(el_class, cnt));
     #ifdef DEBUG
