@@ -8,6 +8,12 @@ inline unsigned int Tomonoid::posInHelpers(unsigned int order)
 void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el, const Element& er, associated_mapset associatedValues )
 {
 
+#ifdef VERBOSE
+  std::cerr << "Now calculating for idempotent pair " << std::endl;
+  std::cerr << "Left: " << el << std::endl;
+  std::cerr << "Right: " << er << std::endl;
+#endif
+  
   // step 4 - omitted (results are in this->importantResults or in previous levels)
   
   // step 5
@@ -934,7 +940,7 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
   // take some, if it assigned 1, then nothing to check (precedings will be <=)
   // if it is 0, then check if all precedings are also 0
   
-  if (setCount <= 8) // let's say that until this it might be faster to try and check
+  if (setCount <= 12) // let's say that until this it might be faster to try and check
   {
     /*std::cout << "Now added zeroTom:" << std::endl;
 	TomonoidPrinter tpp;

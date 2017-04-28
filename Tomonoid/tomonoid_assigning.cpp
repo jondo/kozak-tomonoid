@@ -543,9 +543,9 @@ void Tomonoid::assignOthers(std::map< std::set< TableElement >*, std::set< std::
       std::set< std::set< TableElement >* > *sets = (*set_iterator).second;
       cnt = sets->size();
     }
-    else
+    if (cnt == 0)
     {
-	starting_zeros.push(el_class);
+      starting_zeros.push(el_class);
     }
     sizes_map.insert(std::make_pair(el_class, cnt));
     #ifdef DEBUG
