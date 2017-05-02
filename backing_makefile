@@ -1,0 +1,48 @@
+CC=g++
+STD=c++11
+LIBS=-pthread
+FLAGS=
+NAME=tomonoid_generator
+
+FILES=tomonoid.h element.cpp element_creator.cpp main.cpp permutation_try.h table_element.cpp tomonoid.cpp  tomonoid_assigning.cpp tomonoid_generating.cpp tomonoid_reader.cpp strong_connectivity_finder.cpp
+
+OBJFILES = element.o element_creator.o main.o table_element.o tomonoid.o tomonoid_assigning.o tomonoid_generating.o tomonoid_reader.o strong_connectivity_finder.o
+
+all: $(NAME)
+
+$(NAME): $(OBJFILES)
+	$(CC) $(FLAGS) $(LIBS) -std=$(STD) -o $(NAME) $(OBJFILES)
+
+#*.o: *.cpp
+#	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+
+element.o: element.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+element_creator.o: element_creator.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+main.o: main.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+tomonoid.o: tomonoid.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+tomonoid_assigning.o: tomonoid_assigning.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+tomonoid_generating.o: tomonoid_generating.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+tomonoid_reader.o: tomonoid_reader.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+table_element.o: table_element.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+strong_connectivity_finder.o: strong_connectivity_finder.cpp tomonoid.h
+	$(CC) -std=$(STD) $(FLAGS) $(LIBS) -c $<
+
+.PHONY: clean-exe clean clean-all
+
+clean-all: clean-exe clean
+
+clean:
+	rm -f *.o
+
+clean-exe:
+	rm -f $(NAME)
+
+
