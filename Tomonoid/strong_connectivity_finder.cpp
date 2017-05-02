@@ -7,22 +7,17 @@ Tomonoid::StrongConnectivityFinder::StrongConnectivityFinder(std::set< vertex* >
   this->ptrset = ptrset;
   this->precededSets = precededSets;
   this->revertSets = revertSets;
-  
-  stack = new std::stack<vertex*>();
-  onStack = new std::unordered_set<vertex*>();
-  indices = new std::unordered_map<vertex*, int>();
-}
-
-Tomonoid::StrongConnectivityFinder::~StrongConnectivityFinder()
-{
-  delete stack;
-  delete onStack;
-  delete indices;
 }
 
 void Tomonoid::StrongConnectivityFinder::findComponents()
 {
   tarjan();
+  rebuildVerticesSets();
+}
+
+void Tomonoid::StrongConnectivityFinder::rebuildVerticesSets()
+{
+  // do da work
 }
 
 void Tomonoid::StrongConnectivityFinder::tarjan()
@@ -32,7 +27,7 @@ void Tomonoid::StrongConnectivityFinder::tarjan()
   for (auto it = ptrset->begin(); it != ptrset->end(); ++it)
   {
     vertex *vertex = *it;
-    if (indices->find(vertex) == indices->end())
+    if (indices.find(vertex) == indices.end())
     {
       strongConnect(vertex);
     }
@@ -55,11 +50,11 @@ void Tomonoid::StrongConnectivityFinder::tarjan()
 void Tomonoid::StrongConnectivityFinder::strongConnect(Tomonoid::StrongConnectivityFinder::vertex* v)
 {
   int curr_index = index;
-  indices->insert(std::make_pair(v, index));
+  indices.insert(std::make_pair(v, index));
   int lowlink = index;
   ++index;
-  onStack->insert(v);
-  stack->push(v);
+  onStack.insert(v);
+  stack.push(v);
   
   auto prit = precededSets->find(v);
   std::set<vertex*> *precs = (*prit).second;
@@ -67,13 +62,13 @@ void Tomonoid::StrongConnectivityFinder::strongConnect(Tomonoid::StrongConnectiv
   for (auto it = precs->begin(); it != precs->end(); ++it)
   {
     vertex *next = *it;
-    if (indices->find(next) == indices->end() )
+    if (indices.find(next) == indices.end() )
     {
       strongConnect(next);
     }
-    else if (onStack->find(next) != onStack->end() )
+    else if (onStack.find(next) != onStack.end() )
     {
-      auto nit = indices->find(next);
+      auto nit = indices.find(next);
       int nextIndex = (*nit).second;
       lowlink = std::min(lowlink, nextIndex);
     }
@@ -87,9 +82,10 @@ void Tomonoid::StrongConnectivityFinder::strongConnect(Tomonoid::StrongConnectiv
 #endif
     do 
     {
-      inComp = stack->top();
-      stack->pop();
-      onStack->erase(inComp);
+      inComp = stack.top();
+      stack.pop();
+      onStack.erase(inComp);
+      remap.insert(std::make_pair(v, inComp));
 #ifdef VERBOSE
       std::cerr << inComp << std::endl;
 #endif

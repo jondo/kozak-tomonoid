@@ -296,9 +296,10 @@ class Tomonoid
     std::map< vertex*, std::set< vertex* >* > *precededSets;
     std::map< vertex*, std::set< vertex* >* > *revertSets;
     
-    std::stack<vertex*> *stack;
-    std::unordered_set<vertex*> *onStack;
-    std::unordered_map<vertex*, int> *indices;
+    std::stack<vertex*> stack;
+    std::unordered_set<vertex*> onStack;
+    std::unordered_map<vertex*, int> indices;
+    std::map<vertex*, vertex*>  remap;
     
     int index = 0;
     
@@ -306,7 +307,7 @@ class Tomonoid
   
     void strongConnect(vertex *v);
     
-    
+    void rebuildVerticesSets();
 
   public:
     void findComponents();
@@ -314,8 +315,6 @@ class Tomonoid
     StrongConnectivityFinder(std::set< vertex* > *ptrset,
 			     std::map< vertex*, std::set< vertex* >* > *precededSets,
 			     std::map< vertex*, std::set< vertex* >* > *revertSets);
-    
-    ~StrongConnectivityFinder();
   };
 
   
