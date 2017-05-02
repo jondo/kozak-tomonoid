@@ -215,53 +215,45 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res, const Element& el
   }
   assignZeros(ptrset, precededSets, revertSets);
   
-  if (el != Element::top_element || er != Element::top_element)
-  {
-    //zkontrolovat asociativitu?
-  }
   
-  //rebuildPreceded(precededSets, revertSets);
-   /*
-  int cc = 0;
-  std::cout << "after assignments " << std::endl;
-  for (std::set<std::set<TableElement>*>::iterator sit = ptrset.begin(); sit != ptrset.end(); ++sit)
-  {
-    std::cout << "Iteration " << cc << ", address: " << *sit << std::endl;
-    for (std::set<TableElement>::iterator eas = (*sit)->begin(); eas != (*sit)->end(); ++eas)
-    {
-      std::cout << *eas << std::endl;
-    }
-    cc++;
-  }
+#ifdef VERBOSE
+ int kl = 0;
+  std::cout << "after assignZeros" << std::endl;
   
-  cc = 0;
-  std::cout << "after assignments rev" << std::endl;
-  for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = revertSets.begin(); 
-       sit != revertSets.end(); ++sit)
-  {
-    std::cout << "Iteration " << cc << ", address: " << (*sit).first << std::endl;
-    std::set<std::set<TableElement>*>* p2 = (*sit).second;
-    for (std::set<std::set<TableElement>*>::iterator eas = p2->begin(); eas != p2->end(); ++eas)
-    {
-      std::cout << "rev_adres: " << *eas << std::endl;
-    }
-    cc++;
-  }
-  
-  cc = 0;
-  std::cout << "after assignments prec" << std::endl;
   for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = precededSets.begin(); 
        sit != precededSets.end(); ++sit)
   {
-    std::cout << "Iteration " << cc << ", address: " << (*sit).first << std::endl;
+    std::cout << "Iteration " << kl << ", address: " << (*sit).first << std::endl;
+    std::set<std::set<TableElement>*>* p2 = (*sit).second;
+    for (std::set<std::set<TableElement>*>::iterator eas = p2->begin(); eas != p2->end(); ++eas)
+    {
+      std::cout << "prec_adres: " << *eas << std::endl;
+    }
+    kl++;
+  }
+  kl=0;
+  for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = revertSets.begin(); 
+       sit != revertSets.end(); ++sit)
+  {
+    std::cout << "Iteration " << kl << ", address: " << (*sit).first << std::endl;
     std::set<std::set<TableElement>*>* p2 = (*sit).second;
     for (std::set<std::set<TableElement>*>::iterator eas = p2->begin(); eas != p2->end(); ++eas)
     {
       std::cout << "rev_adres: " << *eas << std::endl;
     }
-    cc++;
-  }*/
+    kl++;
+  }
+#endif
+
   
+  if (el != Element::top_element || er != Element::top_element)
+  {
+    //TODO - zkontrolovat asociativitu?
+  }
+  
+  StrongConnectivityFinder *scf = new StrongConnectivityFinder(&ptrset, &precededSets, &revertSets);
+  scf->findComponents();
+  delete scf;
   
   // So there remains only those from which we can iterate :)
   // Original nextTomo -> assignation with all zeros
@@ -940,7 +932,7 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
   // take some, if it assigned 1, then nothing to check (precedings will be <=)
   // if it is 0, then check if all precedings are also 0
   
-  if (setCount <= 12) // let's say that until this it might be faster to try and check
+  if (setCount <= 8) // let's say that until this it might be faster to try and check
   {
     /*std::cout << "Now added zeroTom:" << std::endl;
 	TomonoidPrinter tpp;
@@ -1049,6 +1041,22 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
     assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
     //std::cout << this << " has " << setCount << " different sets" << std::endl;
   }
+  
+  // TODO - smazat, jen check
+#ifdef CONTROL
+  std::vector<Tomonoid*> *control = new std::vector<Tomonoid*>();
+  assignOthers(revertSets, precededSets, ptrset, *control, zeroTom, telToSet);
+  
+  size_t bla = control->size();
+  
+  for (auto it = control->begin(); it != control->end(); ++it)
+  {
+    Tomonoid *t = *it;
+    delete t;
+  }
+  
+  delete control;
+#endif
   
   // DELETING + CONTROL BLOCK
     std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = precededSets.begin();

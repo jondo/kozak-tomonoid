@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS_DEBUG )
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-add_executable(tomonoid tomonoid_assigning.cpp tomonoid_reader.cpp tomonoid.cpp element_creator.cpp table_element.cpp element.cpp main.cpp tomonoid_generating.cpp)
+add_executable(tomonoid strong_connectivity_finder.cpp tomonoid_assigning.cpp tomonoid_reader.cpp tomonoid.cpp element_creator.cpp table_element.cpp element.cpp main.cpp tomonoid_generating.cpp)
 
 
 find_package (Threads)

@@ -272,6 +272,51 @@ class Tomonoid
   void markToDelete(std::set< TableElement >* current, 
 		    std::unordered_set< std::set< TableElement >* >* toBeDeleted, 
 		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
+  
+  
+  void tarjan(std::set< std::set< TableElement >* >& ptrset,
+	      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
+	      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
+  
+  void strongConnect(std::set<std::set<TableElement>*> &ptrset,
+		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets, 
+		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &revertSets,
+		      std::set<TableElement> *vertex,
+		      int& index,
+		      std::stack<std::set<TableElement>*> *stack,
+		      std::unordered_set<std::set<TableElement>*> *onStack,
+		      std::unordered_map<std::set<TableElement>*, int> *indices
+			    );
+  
+  class StrongConnectivityFinder
+  {
+    typedef std::set< TableElement > vertex;
+    
+    std::set< vertex* > *ptrset;
+    std::map< vertex*, std::set< vertex* >* > *precededSets;
+    std::map< vertex*, std::set< vertex* >* > *revertSets;
+    
+    std::stack<vertex*> *stack;
+    std::unordered_set<vertex*> *onStack;
+    std::unordered_map<vertex*, int> *indices;
+    
+    int index = 0;
+    
+    void tarjan();
+  
+    void strongConnect(vertex *v);
+    
+    
+
+  public:
+    void findComponents();
+    
+    StrongConnectivityFinder(std::set< vertex* > *ptrset,
+			     std::map< vertex*, std::set< vertex* >* > *precededSets,
+			     std::map< vertex*, std::set< vertex* >* > *revertSets);
+    
+    ~StrongConnectivityFinder();
+  };
 
   
 public:
