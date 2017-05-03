@@ -196,6 +196,7 @@ class Tomonoid
 		  Tomonoid*);
   
   void findIdempotents(std::vector<Element>&);
+  
   void calExtFromIdempots(std::vector< Tomonoid* >& res, 
 			  const Element& el, 
 			  const Element& er, 
@@ -231,13 +232,14 @@ class Tomonoid
 		   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
 		   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
   
-  void assignThroughGraph(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
-			      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
-			      std::set<std::set<TableElement>*>& ptrset,
-			      std::vector<Tomonoid*> &res,
-			      Tomonoid *primary);
-  
-  void assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, std::unordered_set< std::set< TableElement >* >& assignedSet, std::vector< Tomonoid* >& res, Tomonoid* primary, std::unordered_map< std::set< TableElement >*, unsigned int >& sizes_map, std::stack< std::set< TableElement >* >& zeros, std::shared_ptr< const Element > atom
+  void assignOthersRecursive(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
+			     std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
+			     std::unordered_set< std::set< TableElement >* >& assignedSet,
+			     std::vector< Tomonoid* >& res,
+			     Tomonoid* primary,
+			     std::unordered_map< std::set< TableElement >*, unsigned int >& sizes_map,
+			     std::stack< std::set< TableElement >* >& zeros,
+			     std::shared_ptr< const Element > atom
 		);
   
   void assignOthers(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
@@ -247,49 +249,12 @@ class Tomonoid
 		  Tomonoid *primary,
 		  std::unordered_map< TableElement, std::set< TableElement >* >& telToSet);
   
-  void goThroughGraph(std::set< std::set< TableElement >* >& current,
-		      std::unordered_map< std::set< TableElement >*, 
-		      std::set< std::set< TableElement >* >* >& next, 
-		      std::set< std::set< TableElement >* >& locks, 
-		      Tomonoid* primary, std::vector< Tomonoid* >& res);
-  
-  void assignRecursively(Tomonoid::results_map& newmap, 
-			 std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
-			 std::set< std::set< TableElement >* >& current,
-			 std::set< std::set< TableElement >* >& lock
-			);
-  
-  void assignThroughCorners(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
-			    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
-			    std::set<std::set<TableElement>*>& ptrset,
-			    std::vector< Tomonoid* >& res, Tomonoid* primary, 
-			    std::unordered_map< TableElement, std::set< TableElement >* >& telToSet);
-  
   void rebuildPreceded(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
 		       std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
-  
-  void doAssignmentLoop(std::set<std::set<TableElement>*>& set,
-		      results_map &newmap,
-		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets);
   
   void markToDelete(std::set< TableElement >* current, 
 		    std::unordered_set< std::set< TableElement >* >* toBeDeleted, 
 		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
-  
-  
-  void tarjan(std::set< std::set< TableElement >* >& ptrset,
-	      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets,
-	      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
-  
-  void strongConnect(std::set<std::set<TableElement>*> &ptrset,
-		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &precededSets, 
-		      std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > &revertSets,
-		      std::set<TableElement> *vertex,
-		      int& index,
-		      std::stack<std::set<TableElement>*> *stack,
-		      std::unordered_set<std::set<TableElement>*> *onStack,
-		      std::unordered_map<std::set<TableElement>*, int> *indices
-			    );
   
   class StrongConnectivityFinder
   {
