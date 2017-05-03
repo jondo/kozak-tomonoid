@@ -252,6 +252,7 @@ void calcNextCall(NextCall *nc)
     //mults.push_back(compare);
     //TomonoidPrinter tp;
     endReached(nc->currentTomo);
+    delete nc;
     return;
   }
   // Calculate extensions
