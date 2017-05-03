@@ -978,7 +978,7 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
   else // else try to assign through graph
   {   
     #ifdef DEBUG
-    std::cerr << "assignThroughCorners" << std::endl;
+    std::cerr << "assignThroughGraph" << std::endl;
     #endif
     
     StrongConnectivityFinder *scf = new StrongConnectivityFinder(&ptrset, &precededSets, &revertSets);
