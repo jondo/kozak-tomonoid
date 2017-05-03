@@ -187,97 +187,6 @@ void Tomonoid::calcAssociatedPs(associated_mapset &res)
     }
   }
   
-  /*TomonoidPrinter tp;
-  tp.printTomonoid(this);
-  //std::cout << "calcAssociatedPs" << std::endl;
-  unsigned int j_start = 1;
-  for (unsigned int i = this->size - 2; i > 0; i--)
-  {
-    std::cout << "i = " << i << std::endl;
-    std::shared_ptr<const Element> iPtr = ElementCreator::getInstance().getElementPtr(i, this->size);
-    
-    std::cout << "Odpovida element: " << *iPtr << std::endl;
-    
-    for (unsigned int j = j_start; j < this->size - 1; j++) // (i, j)
-    {
-      std::cout << "j = " << j << std::endl;
-      std::shared_ptr<const Element> jPtr = ElementCreator::getInstance().getElementPtr(j, this->size);
-      std::cout << "Odpovida element: " << *jPtr << std::endl;
-      const Element& ij = this->getResult(iPtr, jPtr);
-      std::cout << "ij = " << ij << std::endl;
-      
-      if (ij != Element::bottom_element)
-      {
-	
-	
-	for (unsigned int k = calcStart(j); k > 0; k--) // (j, k)
-	{
-	  
-	  std::cout << "k = " << k << std::endl;
-	  
-	  std::shared_ptr<const Element> kPtr = ElementCreator::getInstance().getElementPtr(k, this->size);
-	  std::cout << "Odpovida element: " << *kPtr << std::endl;
-	  const Element& jk = this->getResult(jPtr, kPtr);
-	  std::cout << "jk = " << jk << std::endl;
-	  if (jk != Element::bottom_element)
-	  {
-	    // (i, jk) = (ij, k)
-	    std::shared_ptr<const Element> jkPtr = ElementCreator::getInstance().getElementPtr(jk);
-	    std::shared_ptr<const Element> ijPtr = ElementCreator::getInstance().getElementPtr(ij);
-	    
-	    std::cout << "jk: " << *jkPtr << std::endl;
-	    std::cout << "ij: " << *ijPtr << std::endl;
-	    
-	    const Element& ij_Kres = this->getResult(ijPtr, kPtr);
-	    const Element& i_Jkres = this->getResult(iPtr, jkPtr);
-	    
-	    if (ij_Kres == Element::bottom_element && i_Jkres == Element::bottom_element)
-	    {
-	      TableElement t1(iPtr, jkPtr);
-	      TableElement t2(ijPtr, kPtr);
-	      associated_mapset::iterator it = res.find(t1);
-	      associated_mapset::iterator it2 = res.find(t2);
-	      
-	      insertAssociated(it, t1, t2, res);
-	      insertAssociated(it2, t2, t1, res);
-	    }
-	    else
-	    {
-	      // should be equal
-	      if (ij_Kres != i_Jkres)
-	      {
-		TomonoidPrinter tp;
-		tp.printTomonoid(this);
-		Tomonoid* prev = this->previous;
-		while (prev != NULL)
-		{
-		    tp.printTomonoid(prev);
-		    prev = prev->previous;
-		}
-		
-		throw std::logic_error("Associativity violated for i:" + iPtr.get()->toString() + ", j:" + jPtr.get()->toString()
-		+ ", k:" +  kPtr.get()->toString() + ". (ij, k) = " + ij_Kres.toString() + ", (i, jk) = " + i_Jkres.toString()
-		);
-	      }
-	      // if they are, then there's nothing to do as the result is already known and can't be changed
-	    }
-	    
-	  }
-	  else
-	  {
-	    break; // we're not in P anymore and all results below this point are also 0
-	  }
-	}
-      }
-      else
-      {
-	// in next row, we don't need to start at first element (first column) but we can move to next from this 
-	// one, because  everything before this point is 0 => is not in P
-	columnQEnds[i] = j;
-	j_start = j + 1;
-      }
-    }
-  }*/
 }
 
 void Tomonoid::setImportantResults(const Tomonoid::results_map& n_results)
@@ -329,17 +238,6 @@ void Tomonoid::calculateQs()
     prev = rowQEnds[i];
     //std::cout << "rowEnds-" << i << " = " << prev << std::endl;
   }
-  /*
-  std::cout << "columnQEnds" << std::endl;
-  for (int i = 0; i < this->size - 1; i++)
-  {
-    std::cout << i << ": " <<  columnQEnds[i] << std::endl; 
-  }
-  std::cout << "rowQEnds" << std::endl;
-  for (int i = 0; i < this->size - 1; i++)
-  {
-    std::cout << i << ": " <<  rowQEnds[i] << std::endl; 
-  }*/
   
 }
 
@@ -367,9 +265,9 @@ std::vector<Tomonoid*> Tomonoid::calculateExtensions()
   }
   
   
-  associated_mapset associatedValues; 
+  associated_mapset *associatedValues = new associated_mapset(); 
   //std::cout << "findPs" << std::endl;
-  calcAssociatedPs(associatedValues);
+  calcAssociatedPs(*associatedValues);
   //std::cout << "findPs end" << std::endl;
   
   calculateQs();
@@ -384,7 +282,7 @@ std::vector<Tomonoid*> Tomonoid::calculateExtensions()
     for (it2; it2 != idempotents.end(); ++it2)
     {
       //std::cout << "Calculating idempotent pair: " << *it1 << " and "<< *it2 << std::endl;
-      calExtFromIdempots(extensions, *it1, *it2, associatedValues);
+      calExtFromIdempots(extensions, *it1, *it2, *associatedValues);
     }
     
   }
@@ -395,6 +293,8 @@ std::vector<Tomonoid*> Tomonoid::calculateExtensions()
     nonarch->setArchimedean(false);
     extensions.push_back(nonarch);
   }
+  
+  delete associatedValues;
   
   deleteHelpArrays();
   
