@@ -196,7 +196,10 @@ class Tomonoid
 		  Tomonoid*);
   
   void findIdempotents(std::vector<Element>&);
-  void calExtFromIdempots(std::vector< Tomonoid* >& res, const Element& el, const Element& er, Tomonoid::associated_mapset associatedValues // Kvuli pridavani dalsich prvku
+  void calExtFromIdempots(std::vector< Tomonoid* >& res, 
+			  const Element& el, 
+			  const Element& er, 
+			  Tomonoid::associated_mapset associatedValues // Must be copied for all idempotents separately!!!
   ); 
   
   void calculateQs();
@@ -299,15 +302,18 @@ class Tomonoid
     std::stack<vertex*> stack;
     std::unordered_set<vertex*> onStack;
     std::unordered_map<vertex*, int> indices;
-    std::map<vertex*, vertex*>  remap;
+    std::map<vertex*, std::set<vertex*>*> remap; // REPRESENTING SET -> SET OF SETS IN COMPONENT
+    std::map<vertex*, vertex*> newClass; // ORIGINAL SET -> NEW SET (representing whole component) (reverse of remap)
     
     int index = 0;
     
     void tarjan();
   
-    void strongConnect(vertex *v);
+    int strongConnect(vertex *v);
     
     void rebuildVerticesSets();
+    
+    void renameValues(std::map<vertex*,std::set<vertex*>*> *curr_set);
 
   public:
     void findComponents();
