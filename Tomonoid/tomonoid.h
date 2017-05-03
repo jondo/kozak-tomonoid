@@ -256,6 +256,39 @@ class Tomonoid
 		    std::unordered_set< std::set< TableElement >* >* toBeDeleted, 
 		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
   
+  class GraphAssignator 
+  {
+    typedef std::set<TableElement> associated_set;
+    typedef std::map< associated_set*, std::set< associated_set* >* > mapset_type;
+    typedef std::unordered_set<std::set<TableElement>*> assigned_sets;
+    
+    Tomonoid *primary;
+    mapset_type *precededSets;
+    mapset_type *revertSets;
+    std::vector<Tomonoid*> *res;
+    
+    std::unordered_map< associated_set*, unsigned int > sizes_map;
+    std::shared_ptr< const Element> atom;
+    assigned_sets takenSet;
+    
+    void assignRecursively(std::stack<associated_set*> *zeros, Tomonoid *nowtom);
+    
+    void assignAtoms(associated_set *current, results_map *rm, assigned_sets *newlyAssignedSets);
+    
+    void recount(Tomonoid::GraphAssignator::associated_set* current, std::stack<associated_set*> *zeros);
+    
+    void recountBack(associated_set *current);
+    
+  public:
+    GraphAssignator(mapset_type *precs, 
+		    mapset_type *revs, 
+		    Tomonoid *prims,
+		    std::vector<Tomonoid*> *results
+ 		  );
+    
+    void doAssignment();
+  };
+  
   class StrongConnectivityFinder
   {
     typedef std::set< TableElement > vertex;

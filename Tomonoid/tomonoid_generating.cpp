@@ -981,16 +981,19 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
     std::cerr << "assignThroughGraph" << std::endl;
     #endif
     
-    StrongConnectivityFinder *scf = new StrongConnectivityFinder(&ptrset, &precededSets, &revertSets);
-    scf->findComponents();
-    delete scf;
+    { // so we don't have to allocate it on heap
+      StrongConnectivityFinder scf(&ptrset, &precededSets, &revertSets);
+      scf.findComponents();
+    } // and there it is destructed
     
 #ifdef VERBOSE
     std::cerr << "After running scf" << std::endl;
     printAllInfo(ptrset, precededSets, revertSets);
 #endif
     
-    assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
+    GraphAssignator ga(&precededSets, &revertSets, zeroTom, &res);
+    ga.doAssignment();
+    //assignOthers(revertSets, precededSets, ptrset, res, zeroTom, telToSet);
 #ifndef CONTROL
     delete zeroTom;
 #endif
@@ -999,12 +1002,16 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
 #ifdef CONTROL
   std::vector<Tomonoid*> *control = new std::vector<Tomonoid*>();
   
-  StrongConnectivityFinder *scf = new StrongConnectivityFinder(&ptrset, &precededSets, &revertSets);
-  scf->findComponents();
-  delete scf;
+  {
+    StrongConnectivityFinder scf(&ptrset, &precededSets, &revertSets);
+    scf.findComponents();
+  }
   
-  assignOthers(revertSets, precededSets, ptrset, *control, zeroTom, telToSet);
-  
+  {
+    //assignOthers(revertSets, precededSets, ptrset, *control, zeroTom, telToSet);
+    GraphAssignator ga(&precededSets, &revertSets, zeroTom, &res);
+    ga.doAssignment();
+  }
   size_t bla = control->size();
   
   if (bla != res.size() )
