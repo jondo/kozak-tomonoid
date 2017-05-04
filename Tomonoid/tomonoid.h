@@ -4,6 +4,12 @@
 #define UNASSIGNED -1
 #define NOT_PRESENT 2147483647
 
+#ifdef VERBOSE
+  #ifndef DEBUG
+  #define DEBUG
+  #endif
+#endif
+
 #include <memory>
 #include <iostream>
 #include <fstream>
@@ -179,8 +185,7 @@ class Tomonoid
 			 std::set< std::set< TableElement >* >& ptrset,
 			 Tomonoid* zeroTom, 
 			 std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
-			 std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets,
-			 std::unordered_map< TableElement, std::set< TableElement >* >& telToSet
+			 std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
 			);
   
   void checkVals(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
@@ -238,6 +243,8 @@ class Tomonoid
   void markToDelete(std::set< TableElement >* current, 
 		    std::unordered_set< std::set< TableElement >* >* toBeDeleted, 
 		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
+  
+  void nArchAssocCheck();
   
   class GraphAssignator 
   {
