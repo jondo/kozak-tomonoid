@@ -4,12 +4,6 @@
 #define UNASSIGNED -1
 #define NOT_PRESENT 2147483647
 
-#ifdef VERBOSE
-  #ifndef DEBUG
-  #define DEBUG
-  #endif
-#endif
-
 #include <memory>
 #include <iostream>
 #include <fstream>
@@ -222,10 +216,10 @@ class Tomonoid
   
   void insertAssociated(associated_mapset::iterator&, TableElement&, TableElement&, associated_mapset&);
   
-  void stepE4(const Element&, const Element&);
+  void stepE4(const Element&, const Element&, Tomonoid*);
   void stepE3a(const Element&, const Element&);
   void stepE3c(const Element&, const Element&);
-  void stepE3b(const Element&, const Element&, associated_mapset&);
+  void stepE3b(const Element&, const Element&, associated_mapset&, Tomonoid*);
   
   void calculateMaxNonarchimedean();
   void mergeAssociatedValues(associated_mapset& associatedValues, 
@@ -245,6 +239,7 @@ class Tomonoid
 		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
   
   void nArchAssocCheck();
+  bool controlAssociativity(const Element& el, const Element& er, associated_mapset& res, Tomonoid* next);
   
   class GraphAssignator 
   {

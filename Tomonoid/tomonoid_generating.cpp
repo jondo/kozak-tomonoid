@@ -40,27 +40,26 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
     zeroRow[i] = UNASSIGNED;
   }
   
+  // zero-filled (+ previous values) new tomonoid
+  // as if all free results were set to 0
+  // base tomonoid for final assignment process and first result too
+  Tomonoid *nextTomo = new Tomonoid(this);
+  
   //std::cout << "Step 4" << std::endl;
-  stepE4(el, er);
+  stepE4(el, er, nextTomo);
   //std::cout << "Step 3a" << std::endl;
   stepE3a(el, er);
   //std::cout << "Step 3c" << std::endl;
   stepE3c(el, er);
   //std::cout << "Step 3b" << std::endl;
-  stepE3b(el, er, associatedValues); 
+  stepE3b(el, er, associatedValues, nextTomo); 
   
   // check and repair helper arrays so they may be used in next steps
   editZerosAndAtoms();
   // to be sure, add values in Q that will not be forcibly set to 0 or atom
   controlFreeValues(associatedValues);
   
-  // merge all associated sets
-  std::unordered_multimap<std::set<TableElement> *, TableElement> setToTel;
-  std::unordered_map<TableElement, std::set<TableElement> * > telToSet;
-  
-  mergeAssociatedValues(associatedValues, setToTel, telToSet);
-  
-#ifdef VERBOSE
+  #ifdef VERBOSE
   std::cerr << "Go print" << std::endl;
   
   std::cerr << "Printing zero ends" << std::endl;
@@ -96,21 +95,32 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
     std::cerr << i << ": " <<  rowQEnds[i] << std::endl; 
   }
 #endif
+  
+  bool assocOk = controlAssociativity(el, er, associatedValues, nextTomo);
+  
+  if (!assocOk)
+  {
+#ifdef DEBUG
+    std::cerr << "CANNOT ACCEPT THIS EXTENSION (controlAssociativity -> false)"<< std::endl;
+#endif
+    delete nextTomo;
+    return;
+  }
+  
+  // merge all associated sets
+  std::unordered_multimap<std::set<TableElement> *, TableElement> setToTel;
+  std::unordered_map<TableElement, std::set<TableElement> * > telToSet;
+  
+  mergeAssociatedValues(associatedValues, setToTel, telToSet);
 
   std::set<std::set<TableElement>*> ptrset;
   
-  int iter = 0;
   for (auto ajty = setToTel.begin(); ajty != setToTel.end(); ++ajty)
   {
     std::set<TableElement> *setTel = (*ajty).first;    
     ptrset.insert(setTel);
     
   }
-  
-  // zero-filled (+ previous values) new tomonoid
-  // as if all free results were set to 0
-  // base tomonoid for final assignment process and first result too
-  Tomonoid *nextTomo = new Tomonoid(this);
   
 #ifdef VERBOSE
   int dd = 0;
@@ -125,18 +135,12 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
     dd++;
   }
 #endif
-  
-  // assign atoms to associated sets that have to result in atom only (and remove them)
-  bool atomsOk = assignAtom(ptrset, telToSet, nextTomo);
-  
-  // actually delete those remaining associated sets, that must be zero, so in final we'll have 
-  // only sets that might be assigned both atom or zero
-  
+
   std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* > precededSets;
   std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* > revertSets;
   calcPrecedings(precededSets, revertSets, ptrset);
-  
-#ifdef VERBOSE
+
+  #ifdef VERBOSE
  int kk = 0;
   std::cout << "after calcPrec rev" << std::endl;
   for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = revertSets.begin(); 
@@ -150,9 +154,7 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
     }
     kk++;
   }
-#endif
   
-#ifdef VERBOSE
   std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = revertSets.begin();
     for (iiit; iiit != revertSets.end(); ++iiit)
     {
@@ -161,6 +163,7 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
       
       std::cout << "For associated set " << key << " there are these reverted:" << std::endl;
       
+      int iter = 0;
       for (std::set<std::set<TableElement>*>::iterator it = setDusets->begin(); it != setDusets->end(); ++it)
       {
 	std::cout << "Connected sets, iteration " << iter << std::endl;
@@ -176,35 +179,43 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
     }
 #endif
   
+  // assign atoms to associated sets that have to result in atom only (and remove them)
+  bool atomsOk = assignAtom(ptrset, telToSet, nextTomo);
+  
+  // actually delete those remaining associated sets, that must be zero, so in final we'll have 
+  // only sets that might be assigned both atom or zero
+  
   if (!atomsOk)
   {
     #ifdef DEBUG
-    std::cerr << "CANNOT ACCEPT THIS EXTENSION!" << std::endl;
+    std::cerr << "CANNOT ACCEPT THIS EXTENSION (assignAtom -> false)!" << std::endl;
     #endif
-    
-    std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator iiit = precededSets.begin();
-    for (iiit; iiit != precededSets.end(); ++iiit)
+  
+    for (auto iiit = precededSets.begin(); iiit != precededSets.end(); ++iiit)
     {
-      std::set<TableElement>* key = (*iiit).first;
       std::set<std::set<TableElement>*>* setDusets = (*iiit).second;
       delete setDusets;
     }
     
-    std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator reviii = revertSets.begin();
-    for (reviii; reviii != revertSets.end(); ++reviii)
+    for (auto reviii = revertSets.begin(); reviii != revertSets.end(); ++reviii)
     {
       std::set<std::set<TableElement>*>* setDusets = (*reviii).second;
       delete setDusets;
     }
-  
-    for (std::set<std::set<TableElement>*>::iterator it = ptrset.begin(); it != ptrset.end(); ++it)
+    
+    for (auto it = ptrset.begin(); it != ptrset.end(); ++it)
     {
       std::set<TableElement> *setTel = (*it);
       delete setTel;
-      iter++;
     }
+    delete nextTomo;
     return; // This is invalid.
   }
+  
+
+  
+
+  
   assignZeros(ptrset, precededSets, revertSets);
   
   
@@ -212,21 +223,93 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
   std::cerr << "After assignZeros" << std::endl;
   printAllInfo(ptrset, precededSets, revertSets);
 #endif
-
-  
-  if (el != Element::top_element || er != Element::top_element)
-  {
-    nArchAssocCheck();
-  }
   
   // So there remains only those from which we can iterate :)
   // Original nextTomo -> assignation with all zeros
   validPermutations(res, ptrset, nextTomo, precededSets, revertSets);
 }
 
-void Tomonoid::nArchAssocCheck()
+bool Tomonoid::controlAssociativity(const Element& el, const Element& er, associated_mapset& res, Tomonoid *next)
 {
+  if (el == Element::top_element && er == Element::top_element)
+  {
+    return true;
+  }
+  const unsigned int next_size = next->size;
   
+  #ifdef VERBOSE
+  std::cerr << "Control associativity" << std::endl;
+  #endif
+  
+  const Element& atom = ElementCreator::getInstance().getElement(1, next_size);
+  const Element& bottom = Element::bottom_element;
+  int firstColAtoms = atomCol[0];
+  
+  for (unsigned int i = 1; i < next_size - 1; ++i)
+  {
+    std::shared_ptr<const Element> left = ElementCreator::getInstance().getElementPtr(i, next_size);
+    for (unsigned int j = atomCol[i - 1]; j <= columnQEnds[i - 1]; ++j)
+    {
+      std::shared_ptr<const Element> right = ElementCreator::getInstance().getElementPtr(j + 1, next_size);
+      #ifdef VERBOSE
+      TableElement leftTe(left, right); // this is always equal alpha
+      std::cerr << "(i,j) = " << i << ", " << j + 1 << std::endl;
+      std::cerr << leftTe << std::endl;
+      #endif
+      for (unsigned int k = 1; k < next_size - 1; ++k)
+      {
+	std::shared_ptr<const Element> third = ElementCreator::getInstance().getElementPtr(k, next_size);
+	TableElement rightTe(right, third);
+	#ifdef VERBOSE
+	std::cerr << "k = " << k << std::endl << rightTe << std::endl;
+	#endif
+	const Element& rightRes = next->getResult(rightTe); // (j*k)
+	bool alphaKEqAlpha = k - 1 >= firstColAtoms; // (i*j)*k = alpha*k => alpha or zero
+	// (alpha*k) = i * (j*k)
+	if (rightRes == bottom)
+	{
+	  if (alphaKEqAlpha) // (i*j)*k = alpha, but i*(j*k) = 0
+	  {
+	    #ifdef VERBOSE
+	    std::cerr << "return false" << std::endl;
+	    #endif
+	    return false;
+	  }
+	}
+	else
+	{
+	  std::shared_ptr<const Element> rightResPtr = ElementCreator::getInstance().getElementPtr(rightRes);
+	  TableElement te(left, rightResPtr); 
+	  const Element& check = next->getResult(te); // i*(j*k)
+	  if ( (!alphaKEqAlpha && check != bottom) || (alphaKEqAlpha && check > atom) )
+	  {
+	    #ifdef VERBOSE
+	    std::cerr << "return false" << std::endl;
+	    #endif
+	    return false;
+	  }
+	  else
+	  {
+	    // sparovat
+	    std::shared_ptr<const Element> atomPtr = ElementCreator::getInstance().getElementPtr(atom);
+	    TableElement leftAssoc(atomPtr, third); // alpha*k
+	    
+	    associated_mapset::iterator ileft = res.find(leftAssoc); //[alpha, k]
+	    associated_mapset::iterator iright = res.find(te); // [i, (j*k)]
+	    
+	    #ifdef VERBOSE
+	    std::cerr << leftAssoc << " paired with " << te << std::endl;
+	    #endif
+	    
+	    insertAssociated(ileft, leftAssoc, te, res);
+	    insertAssociated(iright, te, leftAssoc, res);
+	  }
+	}
+      }
+    }
+  }
+  
+  return true;
 }
 
 void Tomonoid::mergeAssociatedValues(associated_mapset& associatedValues, 
@@ -300,7 +383,7 @@ void Tomonoid::mergeAssociatedValues(associated_mapset& associatedValues,
   }
 }
 
-void Tomonoid::stepE4(const Element& el, const Element& er)
+void Tomonoid::stepE4(const Element& el, const Element& er, Tomonoid *next)
 {
   // step 6 - implicitly
   //   step 7 - (a, atom) = 0 and (atom, b) = 0 for all a < el, b < er
@@ -308,6 +391,10 @@ void Tomonoid::stepE4(const Element& el, const Element& er)
   
   /*7. Perform (a, α) ∼ (α, b) ∼ 0 for a < ε l and b < ε r .
 8. Perform (ε l , α) ∼ (α, ε r ) ∼ α.*/
+  
+  std::shared_ptr<const Element> atom = ElementCreator::getInstance().getElementPtr(1, next->size);
+  const int next_size = next->size;
+  results_map nr;
   
   if (el == Element::top_element)
   {
@@ -341,6 +428,37 @@ void Tomonoid::stepE4(const Element& el, const Element& er)
     atomCol[0] = this->size - 1 - order; // z predchoziho se sem nedostanu
     atomRow[this->size - 1 - order] = 0; // neni nula
   }
+  
+  for (int i = atomCol[0]; i < next_size - 2; ++i)
+    {
+      std::shared_ptr<const Element> right = ElementCreator::getInstance().getElementPtr(i + 1, next_size);
+      for (int j = 0; j <= rowQEnds[i]; ++j)
+      {
+	std::shared_ptr<const Element> left = ElementCreator::getInstance().getElementPtr(j + 1, next_size);
+	TableElement te(left, right);
+	nr.insert(std::make_pair(te, atom));
+      }
+    }
+    
+    for (int i = atomRow[0]; i < next_size - 2; ++i)
+    {
+      std::shared_ptr<const Element> left = ElementCreator::getInstance().getElementPtr(i + 1, next_size);
+      for (int j = 0; j <= columnQEnds[i]; ++j)
+      {
+	std::shared_ptr<const Element> right = ElementCreator::getInstance().getElementPtr(j + 1, next_size);
+	TableElement te(left, right);
+	nr.insert(std::make_pair(te, atom));
+      }
+    }
+  
+  next->setImportantResults(nr);
+#ifdef VERBOSE
+  if (nr.size() > 0)
+  {
+    TomonoidPrinter tp;
+    tp.printTomonoid(next);
+  }
+#endif
 }
 
 void Tomonoid::stepE3c(const Element& el, const Element& er)
@@ -499,7 +617,7 @@ void Tomonoid::stepE3a(const Element& el, const Element& er)
   }
 }
 
-void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& res)
+void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& res, Tomonoid* next)
 {
 /*
  * 13. For every b ∈ S̄ such that α < b < 1:
@@ -509,13 +627,14 @@ void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& 
 ∗ perform (a, e) ∼
  ̇ (a, b).
  * */
+  const int next_size = next->size;
   if (er != Element::top_element) // then (b, er) = (b, 1) = b >= b, nothing to do
   {
     std::shared_ptr<const Element> erPtr = ElementCreator::getInstance().getElementPtr(er);
-    for (int b = 1; b < this->size - 1; b++)
+    for (int b = 1; b < next_size - 2; b++)
     {
-      std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b + 1, this->size + 1);
-      const Element& e = getResult(bPtr , erPtr);
+      std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b + 1, next_size);
+      const Element& e = next->getResult(bPtr , erPtr);
       //std::cout << *(bPtr.get()) << " * " << *(erPtr.get()) << " = " << e;
       
       if (e < *( bPtr.get() ) )
@@ -523,7 +642,7 @@ void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& 
 	std::shared_ptr<const Element> ePtr;
 	if (e == Element::bottom_element)
 	{
-	  ePtr = ElementCreator::getInstance().getElementPtr(1, this->size + 1);
+	  ePtr = ElementCreator::getInstance().getElementPtr(1, next_size);
 	}
 	else
 	{
@@ -538,8 +657,8 @@ void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& 
 	  }
 	  else
 	  {
-	    std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a + 1, this->size + 1);
-	    const Element& ae = getResult(aPtr, ePtr);
+	    std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a + 1, next_size);
+	    const Element& ae = next->getResult(aPtr, ePtr);
 	    TableElement tab(aPtr, bPtr);
 	    TableElement tae(aPtr, ePtr);
 	    // TODO - rethink it again, but e < b
@@ -575,10 +694,10 @@ void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& 
   if (el != Element::top_element) // then (el, b) = (1, b) = b >= b, nothing to do
   {
     std::shared_ptr<const Element> elPtr = ElementCreator::getInstance().getElementPtr(el);
-    for (int b = 1; b < this->size - 1; b++)
+    for (int b = 1; b < next_size - 2; b++)
     {
-      std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b + 1, this->size + 1);
-      const Element& d = getResult(elPtr, bPtr);
+      std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b + 1, next_size);
+      const Element& d = next->getResult(elPtr, bPtr);
       
       if (d < *( bPtr.get() ) )
       {
@@ -586,7 +705,7 @@ void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& 
 	std::shared_ptr<const Element> dPtr;
 	if (d == Element::bottom_element)
 	{
-	  dPtr = ElementCreator::getInstance().getElementPtr(1, this->size + 1);
+	  dPtr = ElementCreator::getInstance().getElementPtr(1, next_size);
 	}
 	else
 	{
@@ -601,8 +720,8 @@ void Tomonoid::stepE3b(const Element& el, const Element& er, associated_mapset& 
 	  }
 	  else
 	  {
-	    std::shared_ptr<const Element> cPtr = ElementCreator::getInstance().getElementPtr(c + 1, this->size + 1);
-	    const Element& dc = getResult(dPtr, cPtr);
+	    std::shared_ptr<const Element> cPtr = ElementCreator::getInstance().getElementPtr(c + 1, next_size);
+	    const Element& dc = next->getResult(dPtr, cPtr);
 	    TableElement tdc(dPtr, cPtr);
 	    TableElement tbc(bPtr, cPtr);
 	    // TODO think about it again, but d < b -> (d,c) < (b,c) anyway!
@@ -1012,7 +1131,7 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
   
   {
     //assignOthers(revertSets, precededSets, ptrset, *control, zeroTom, telToSet);
-    GraphAssignator ga(&precededSets, &revertSets, zeroTom, &res);
+    GraphAssignator ga(&precededSets, &revertSets, zeroTom, control);
     ga.doAssignment();
   }
   size_t bla = control->size();
@@ -1053,11 +1172,11 @@ void Tomonoid::validPermutations(std::vector<Tomonoid*> &res,
       delete setDusets;
     }
   
-  for (auto it = ptrset.begin(); it != ptrset.end(); ++it)
-  {
-    std::set<TableElement> *setTel = (*it);
-    delete setTel;
-  }
+    for (auto it = ptrset.begin(); it != ptrset.end(); ++it)
+    {
+      std::set<TableElement> *setTel = (*it);
+      delete setTel;
+    }
 }
 
 void Tomonoid::calcPrecedings(std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
