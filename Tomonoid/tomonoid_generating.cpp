@@ -266,7 +266,24 @@ bool Tomonoid::controlAssociativity(const Element& el, const Element& er, associ
 	const Element& rightRes = next->getResult(rightTe); // (j*k)
 	bool alphaKEqAlpha = k - 1 >= firstColAtoms; // (i*j)*k = alpha*k => alpha or zero
 	// (alpha*k) = i * (j*k)
-	if (rightRes == bottom)
+	
+	// check one side i*j*k
+	if (rightRes != bottom)
+	{
+	  std::shared_ptr<const Element> rightResPtr = ElementCreator::getInstance().getElementPtr(rightRes);
+	  TableElement rightTe(left, rightResPtr);
+	  
+	  const Element& finRes = next->getResult(rightTe);
+	  if (finRes > atom || (finRes == atom && !alphaKEqAlpha))
+	  {
+	    #ifdef VERBOSE
+	    std::cerr << "return false, (ij)k != i(jk)" << std::endl;
+	    #endif
+	    return false;
+	  }
+	  // else let it be...
+	}
+	/*if (rightRes == bottom) // act like if it is alpha
 	{
 	  if (alphaKEqAlpha) // (i*j)*k = alpha, but i*(j*k) = 0
 	  {
@@ -281,7 +298,7 @@ bool Tomonoid::controlAssociativity(const Element& el, const Element& er, associ
 	  std::shared_ptr<const Element> rightResPtr = ElementCreator::getInstance().getElementPtr(rightRes);
 	  TableElement te(left, rightResPtr); 
 	  const Element& check = next->getResult(te); // i*(j*k)
-	  if ( (!alphaKEqAlpha && check != bottom) || (alphaKEqAlpha && check > atom) )
+	  if ( (!alphaKEqAlpha && check != bottom) || check > atom )
 	  {
 	    #ifdef VERBOSE
 	    std::cerr << "return false" << std::endl;
@@ -304,7 +321,29 @@ bool Tomonoid::controlAssociativity(const Element& el, const Element& er, associ
 	    insertAssociated(ileft, leftAssoc, te, res);
 	    insertAssociated(iright, te, leftAssoc, res);
 	  }
+	}*/
+	// other side k*i*j -> k*(i*j) = (k*i)*j => k*alpha = (k*i)*j
+	
+	bool kAlphaEqAlpha = atomCol[k - 1] < 1; // k*alpha = alpha, else k*alpha = 0
+	TableElement ki(third, left);
+	const Element& leftRes = next->getResult(ki);
+	
+	if (leftRes != bottom)
+	{
+	  std::shared_ptr<const Element> leftResPtr = ElementCreator::getInstance().getElementPtr(leftRes);
+	  TableElement leftTe(leftResPtr, right);
+	  
+	  const Element& finRes = next->getResult(leftTe);
+	  if (finRes > atom || (finRes == atom && !kAlphaEqAlpha))
+	  {
+	    #ifdef VERBOSE
+	    std::cerr << "return false, (ki)j != k(ij)" << std::endl;
+	    #endif
+	    return false;
+	  }
+	  
 	}
+	
       }
     }
   }
