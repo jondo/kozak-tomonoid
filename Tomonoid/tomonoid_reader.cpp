@@ -87,10 +87,12 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
   std::map<TableElement, std::shared_ptr<const Element>> results_map;
   token = nextDelim(working, delim_comma);
   int previd = std::stoi(token);
+  std::vector<std::shared_ptr<const Element>> nonarchs;
   if (previd)
   {
     Tomonoid *prev = readId(previd);
     results_map = prev->getResults();
+    nonarchs = std::vector<std::shared_ptr<const Element>>(prev->getNonarchimedeanArray());
     delete prev; // not needed anymore
   }
   
@@ -99,7 +101,6 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
   if (token.length() > 1) // Non-archimedean vals present.
   {
     int pos;
-    std::vector<std::shared_ptr<const Element>> nonarchs;
     token.erase(0,1); // [ Opening bracket
     std::string help; // If there's exactly one nonarch
     

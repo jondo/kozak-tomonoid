@@ -316,6 +316,8 @@ public:
   
   void setNonarchimedeanArray(std::vector<std::shared_ptr<const Element>>);
   
+  const std::vector<std::shared_ptr<const Element>>& getNonarchimedeanArray() const {return this->nonarchs;};
+  
   std::vector< Tomonoid* > calculateExtensions();
   
   const results_map& getResults() const {return this->importantResults;};
