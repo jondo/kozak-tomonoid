@@ -610,20 +610,153 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
   
   start = true;
   
-  for (it; it != importantResults.end(); ++it)
+  if (optimizingSaveMode)
   {
-    if (!start)
-    {
-      sstr << ",";
+    if (previd != 0)
+      {
+      int atomNumber = this->size - 2;
+      int columnMaxs[atomNumber];
+      std::fill_n(columnMaxs, atomNumber, 0);
+      for (it; it != importantResults.end(); ++it)
+      {
+	const std::pair<TableElement, std::shared_ptr<const Element>> &res = *it;
+	const TableElement &te = res.first;
+	std::shared_ptr<const Element> left = te.getLeft();
+	std::shared_ptr<const Element> right = te.getRight();
+	int col = this->size - left->getOrder() - 2;
+	int rightOrder = right->getOrder();
+	int max = columnMaxs[col];
+	if (max < rightOrder)
+	{
+	  columnMaxs[col] = rightOrder;
+	  /*for (int k = col + 1; k < this->size - 2; ++k)
+	  {
+	    if (columnMaxs[k] < rightOrder)
+	    {
+	      columnMaxs[k] = rightOrder;
+	    }
+	    else
+	    {
+	      break;
+	    }
+	  }*/
+	}
+      }
+      
+      int control = 0;
+      
+      for (int i = 0; i < atomNumber; ++i)
+      {
+	int compare = columnMaxs[i];
+	if (compare > control)
+	{
+	  if (!start)
+	  {
+	    sstr << ",";
+	  }
+	  start = false;
+	  control = compare;
+	  int leftNumber = this->size - i - 2;
+	  sstr << "[" << leftNumber << "," << compare << "," << atomNumber << "]";
+	  if (control == atomNumber)
+	  {
+	    break;
+	  }
+	}
+      }
     }
-    start = false;
-    const std::pair<TableElement, std::shared_ptr<const Element>> &res = *it;
-    const TableElement &te = res.first;
-    std::shared_ptr<const Element> val = res.second;
-    std::shared_ptr<const Element> left = te.getLeft();
-    std::shared_ptr<const Element> right = te.getRight();
-    
-    sstr << "[" << left.get()->getOrder() << "," << right.get()->getOrder() << "," << val.get()->getOrder() << "]";
+    else
+    {
+      std::unordered_map<int, int*> vals;
+      for (it; it != importantResults.end(); ++it)
+      {
+	const std::pair<TableElement, std::shared_ptr<const Element>> &res = *it;
+	const TableElement &te = res.first;
+	std::shared_ptr<const Element> left = te.getLeft();
+	std::shared_ptr<const Element> right = te.getRight();
+	std::shared_ptr<const Element> result = res.second;
+	int rightOrder = right->getOrder();
+	int resultOrder = result->getOrder();
+	int col = resultOrder - left->getOrder();
+	
+	int max = 0;
+	int *arr;
+	auto findIt = vals.find(resultOrder);
+	if (findIt == vals.end() )
+	{
+	  arr = new int[resultOrder]();
+	  vals.insert(std::make_pair(resultOrder, arr));
+	}
+	else
+	{
+	  arr = (*findIt).second;
+	  max = arr[col];
+	}
+	if (max < rightOrder)
+	{
+	  arr[col] = rightOrder;
+	  /*for (int k = col + 1; k < resultOrder; ++k)
+	  {
+	    if (arr[k] < rightOrder)
+	    {
+	      arr[k] = rightOrder;
+	    }
+	    else
+	    {
+	      break;
+	    }
+	  }*/
+	}
+      }
+      
+      for (auto it = vals.begin(); it != vals.end(); ++it)
+      {
+	int* arr = (*it).second;
+	int resultOrder = (*it).first;
+	
+	int control = 0;
+	for (int i = 0; i < resultOrder; ++i)
+	{
+	  int compare = arr[i];
+	  if (compare > control)
+	  {
+	    if (!start)
+	    {
+	      sstr << ",";
+	    }
+	    start = false;
+	    control = compare;
+	    int leftNumber = resultOrder - i;
+	    std::cerr << "[" << leftNumber << "," << compare << "," << resultOrder << "]" << std::endl;
+	    if (control == resultOrder)
+	    {
+	      break;
+	    }
+	  }
+	}
+	
+	delete[] arr;
+      }
+      
+    }
+  }
+  else
+  {
+    for (it; it != importantResults.end(); ++it)
+    {
+      if (!start)
+      {
+	sstr << ",";
+      }
+      start = false;
+      const std::pair<TableElement, std::shared_ptr<const Element>> &res = *it;
+      const TableElement &te = res.first;
+      std::shared_ptr<const Element> val = res.second;
+      std::shared_ptr<const Element> left = te.getLeft();
+      std::shared_ptr<const Element> right = te.getRight();
+      
+      sstr << "[" << left.get()->getOrder() << "," << right.get()->getOrder() << "," << val.get()->getOrder() << "]";
+    }
   }
   
   sstr << "]}";

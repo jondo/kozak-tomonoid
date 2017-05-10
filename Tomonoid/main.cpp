@@ -16,7 +16,7 @@
 #define WAIT 0
 #define ALL_DONE 2
 
-bool onlyArchimedean = false, onlyCommutative = false;
+bool onlyArchimedean = false, onlyCommutative = false, optimizingSaveMode = false;
 
 std::string outputName = "";
 
@@ -572,6 +572,7 @@ void printHelp()
   std::cerr << std::setw(width) << "-i [FILENAME]" << "Name of input file (must be succeeded by -id)." << std::endl;
   std::cerr << std::setw(width) << "-id [ID]" << "ID of root tomonoid for current session." << std::endl;
   std::cerr << std::setw(width) << "-multi" << "Enable multi-threading." << std::endl;
+  std::cerr << std::setw(width) << "-optsave" << "Optimize saving (produces lesser output files, but execution may take more time)." << std::endl;
 }
 
 void readArgs(int argc, char** argv)
@@ -691,6 +692,11 @@ void readArgs(int argc, char** argv)
     {
       multi = true;
       std::cerr << "Multi-threading enabled." << std::endl;
+    }
+    else if (command == "-optsave")
+    {
+      optimizingSaveMode = true;
+      std::cerr << "Saving optimization enabled." << std::endl;
     }
     else if (command == "-h" || command == "--help")
     {
@@ -899,7 +905,7 @@ Tomonoid* createt9Tomo()
   std::shared_ptr<const Element> t = ElementCreator::getInstance().getElementPtr(1, *t7);
   //std::vector<std::vector<Tomonoid*>> vecOfVecOfTomos;
 
-  std::map<TableElement, std::shared_ptr<const Element>> resmap;
+  std::unordered_map<TableElement, std::shared_ptr<const Element>> resmap;
   resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(v,z), v));
   resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(v,y), v));
   resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(y,x), v));
@@ -932,7 +938,7 @@ Tomonoid* create7tomo()
 
   Tomonoid *t2 = new Tomonoid(7);
   
-  std::map<TableElement, std::shared_ptr<const Element>> ir;
+  std::unordered_map<TableElement, std::shared_ptr<const Element>> ir;
   std::shared_ptr<const Element> z = ElementCreator::getInstance().getElementPtr(5, *t2);
   std::shared_ptr<const Element> y = ElementCreator::getInstance().getElementPtr(4, *t2);
   std::shared_ptr<const Element> x = ElementCreator::getInstance().getElementPtr(3, *t2);

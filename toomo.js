@@ -117,16 +117,32 @@ function tablefy(arr) {
 
 	bla.push("<table><tr>");
 	var curr_nona = sz + 1;
-	for (var i = sz - 1; i >= 0; i--)
+
+	for (var j = sz - 1; j >= 0; j--)
 	{
-		if (arr[i][i] == i + 1)
-			{curr_nona = i + 1}
-		for (var j = i; j >= 0; j--)
+		if (arr[sz - 1][j] == 0)
+		{
+			arr[sz - 1][j] = curr_nona;
+		}
+		else
+		{
+			curr_nona = arr[sz - 1][j];
+		}
+	}	
+
+	for (var i = sz - 2; i >= 0; i--)
+	{
+		var curr_val = sz + 1;
+		for (var j = sz - 1; j >= 0; j--)
 		{
 			if (arr[i][j] == 0)
-			{arr[i][j] = curr_nona;}
-			if (arr[j][i] == 0)
-			{arr[j][i] = curr_nona;}
+			{
+				arr[i][j] = curr_val < arr[i + 1][j] ? curr_val : arr[i + 1][j];
+			} 
+			else
+			{
+				curr_val = arr[i][j];
+			}
 		}
 	}
 	for (var i = sz + 1; i >= 0; i--)

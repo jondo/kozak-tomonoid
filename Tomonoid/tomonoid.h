@@ -16,7 +16,7 @@
 #include <stack>
 #include <unordered_set>
 
-extern bool onlyArchimedean, onlyCommutative;
+extern bool onlyArchimedean, onlyCommutative, optimizingSaveMode;
 
 /**
  * Enum of element types.
@@ -125,10 +125,25 @@ public:
 
 };
 
+// custom specialization of std::hash can be injected in namespace std
+// Hash function for TableElements.
+namespace std
+{
+    template<> struct hash<TableElement>
+    {
+        typedef TableElement argument_type;
+        typedef std::size_t result_type;
+        result_type operator()(argument_type const& s) const
+        {
+            return s.getHash();
+        }
+    };
+}
+
 class Tomonoid 
 {
   typedef std::vector<TableElement> associated_values;
-  typedef std::map<TableElement, std::shared_ptr<const Element>> results_map;
+  typedef std::unordered_map<TableElement, std::shared_ptr<const Element>> results_map;
   typedef std::vector<associated_values> all_associated_elements;
   typedef std::map<TableElement, std::set<TableElement>> associated_mapset;
   
@@ -419,20 +434,4 @@ class TomonoidPrinter
 public:
   void printTomonoid(Tomonoid *tomo);
 };
-
-// custom specialization of std::hash can be injected in namespace std
-// Hash function for TableElements.
-namespace std
-{
-    template<> struct hash<TableElement>
-    {
-        typedef TableElement argument_type;
-        typedef std::size_t result_type;
-        result_type operator()(argument_type const& s) const
-        {
-            return s.getHash();
-        }
-    };
-}
-
 #endif

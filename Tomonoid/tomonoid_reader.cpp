@@ -17,6 +17,7 @@ const int delim_len = delim_comma.length();
 // pro hledani podle id: 
 Tomonoid* TomonoidReader::readId(unsigned int id)
 {
+  // TODO takhle to nepujde, nekolikanasobne prochazeni fajlu...
   std::string regex_str = id_start + std::to_string(id) + id_end;
   std::regex reg(regex_str, std::regex::nosubs);
   std::smatch sm;
@@ -84,7 +85,7 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
   nextDelim(working, delim_comma);
   
   //Previous tomonoid
-  std::map<TableElement, std::shared_ptr<const Element>> results_map;
+  std::unordered_map<TableElement, std::shared_ptr<const Element>> results_map;
   token = nextDelim(working, delim_comma);
   int previd = std::stoi(token);
   std::vector<std::shared_ptr<const Element>> nonarchs;
@@ -119,9 +120,8 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
     #endif
     
     nonarchs.push_back(ElementCreator::getInstance().getElementPtr(remap(size,pos), *ret));
-    ret->setNonarchimedeanArray(nonarchs);
   }
-  
+  ret->setNonarchimedeanArray(nonarchs);
   working.erase(0,1); // ,[ in string
   
   token = nextDelim(working, delim_rightbr);
@@ -129,6 +129,8 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
   #ifdef DEBUG
   std::cerr << token << std::endl;
   #endif
+  
+  std::set<TableElement> controlElements;
   
   std::string help;
     while (token.length() > 1)
@@ -156,9 +158,71 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
       
       results_map.insert(std::make_pair(te, ElementCreator::getInstance().getElementPtr(remap(size, op_res), *ret)));
       
+      controlElements.insert(te);
+      
       token = nextDelim(working, delim_rightbr);
     }
+  
+  for (auto it = controlElements.begin(); it != controlElements.end(); ++it)
+  {
+    const TableElement &te = *it;
+#ifdef DEBUG
+    std::cerr << "Control TableElement ! " << te << std::endl;
+#endif
+    int col = te.getLeft()->getOrder();
+    int row = te.getRight()->getOrder();
     
+#ifdef DEBUG
+    std::cerr << "col,row: " << col << ", " << row << std::endl;
+#endif
+    
+    auto ti = results_map.find(te);
+    std::shared_ptr<const Element> res = (*ti).second;
+    
+    int jmin = 0;
+    for (int i = col; i > 0; --i)
+    {
+      std::shared_ptr<const Element> leftPtr = ElementCreator::getInstance().getElementPtr(remap(size, i), *ret);
+#ifdef DEBUG
+      std::cerr << "i = " << i << std::endl;
+#endif
+      for (int j = row; j > jmin; --j)
+      {
+	if (i == col && j == row) continue;
+	#ifdef DEBUG
+        std::cerr << "j = " << j << std::endl;
+#endif
+	std::shared_ptr<const Element> rightPtr = ElementCreator::getInstance().getElementPtr(remap(size, j), *ret);
+	TableElement te2(leftPtr, rightPtr);
+#ifdef DEBUG
+	std::cerr << te2 <<  std::endl << "result: " << ret->getResult(te2) << std::endl;
+#endif
+	if (results_map.find(te2) == results_map.end() && ret->getResult(te2) == Element::bottom_element)
+	{
+#ifdef DEBUG
+	  std::cerr << "adding it" << std::endl;
+#endif
+	  results_map.insert(std::make_pair(te2, res));
+	} 
+	else
+	{
+#ifdef DEBUG
+	    std::cerr << "jmin = " << j << std::endl;
+#endif
+	  jmin = j;
+	  break;
+	}
+      }
+      if (jmin == row)
+      {
+#ifdef DEBUG
+	std::cerr << "jmin = row = " << row << std::endl;
+#endif
+	break;
+      }
+    }
+  }
+  
   // Results
   ret->setImportantResults(results_map);
   
