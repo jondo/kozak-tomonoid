@@ -3,6 +3,7 @@ var basic_colors = [[30,170,170],[30,30,170],[30,170,30],[170,170,30],[170,30,30
 var current_tomo = 1;
 var tomonoid_ids = new Object();
 var freed = true;
+var left_in_cols = true;
 
 function getPos(id)
 {
@@ -194,7 +195,18 @@ function readTomonoid(pos) {
 			for (var i = 0; i < res.length; i++)
 			{
 				var res_arr = res[i];
-				table[res_arr[0] - 1][res_arr[1] - 1] = res_arr[2];			
+				var colu = left_in_cols ? res_arr[0] - 1 : res_arr[1] - 1;
+				var roww = left_in_cols ? res_arr[1] - 1 : res_arr[0] - 1; 
+				if (res_arr.length == 3)
+				{
+					table[colu][roww] = res_arr[2];
+					if (tomo.comm) table[roww][colu] = res_arr[2];
+				}
+				else if (res_arr.length == 2)
+				{
+					table[colu][roww] = sz;
+					if (tomo.comm) table[roww][colu] = sz;
+				}			
 			}
 		}
 		return table;
@@ -214,7 +226,18 @@ function readTomonoid(pos) {
 			for (var i = 0; i < res.length; i++)
 			{
 				var res_arr = res[i];
-				table[res_arr[0] - 1][res_arr[1] - 1] = res_arr[2];			
+				var colu = left_in_cols ? res_arr[0] - 1 : res_arr[1] - 1;
+				var roww = left_in_cols ? res_arr[1] - 1 : res_arr[0] - 1; 
+				if (res_arr.length == 3)
+				{
+					table[colu][roww] = res_arr[2];
+					if (tomo.comm) table[roww][colu] = res_arr[2];
+				}
+				else if (res_arr.length == 2)
+				{
+					table[colu][roww] = sz;
+					if (tomo.comm) table[roww][colu] = sz;
+				}		
 			}	
 		return table;
 
