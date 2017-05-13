@@ -657,7 +657,7 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
 	  start = false;
 	  control = compare;
 	  int leftNumber = this->size - i - 2;
-	  sstr << "[" << leftNumber << "," << compare << "," << atomNumber << "]";
+	  sstr << "[" << leftNumber << "," << compare << "]";
 	  if (control == atomNumber)
 	  {
 	    break;
