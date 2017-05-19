@@ -147,7 +147,7 @@ class Tomonoid
   typedef std::vector<associated_values> all_associated_elements;
   typedef std::map<TableElement, std::set<TableElement>> associated_mapset;
   
-  bool archimedean = true; /**< Is tomonoid archimedean? */
+  bool topIdempotent = true; /**< Is tomonoid archimedean? */
   unsigned int size; /**< Number of elements (including top and bottom ones). */
   /**
    * Lowest element that is non-archimedean (e*e = e). 
@@ -349,9 +349,9 @@ public:
   
   unsigned int getSize() const {return size;}
   
-  void setArchimedean(bool);
+  void setTopIdempotent(bool);
   
-  bool isArchimedean() const;
+  bool isTopIdempotent() const;
   
   unsigned int getMaxNonarchimedean();
   
