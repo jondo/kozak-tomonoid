@@ -2,10 +2,10 @@
 #include <regex>
 
 const std::string size_start("\\{");
-const std::string size_end(",([0-9]+,){3}\\[[0-9,]*\\],(\\[(\\[[0-9]*,[0-9]*,[0-9]*\\],)*(\\[[0-9]*,[0-9]*,[0-9]*\\])|\\[)\\]\\}");
+const std::string size_end(",([0-9]+,){3}\\[[0-9,]*\\],(\\[(\\[[0-9]*,[0-9]*(,[0-9]*)*\\],)*(\\[[0-9]*,[0-9]*(,[0-9]*)*\\])|\\[)\\]\\}");
 
 const std::string id_start("\\{([0-9]+,){2}");
-const std::string id_end(",[0-9]+,\\[[0-9,]*\\],(\\[(\\[[0-9]*,[0-9]*,[0-9]*\\],)*(\\[[0-9]*,[0-9]*,[0-9]*\\])|\\[)\\]\\}");
+const std::string id_end(",[0-9]+,\\[[0-9,]*\\],(\\[(\\[[0-9]*,[0-9]*(,[0-9]*)*\\],)*(\\[[0-9]*,[0-9]*(,[0-9]*)*\\])|\\[)\\]\\}");
 
 const std::string delim_comma(",");
 const std::string delim_leftbr("[");
@@ -50,11 +50,15 @@ Tomonoid* TomonoidReader::readId(unsigned int id)
 
 std::string nextDelim(std::string& parsed, const std::string& delimiter)
 {
-  int pos = parsed.find(delimiter);
-  std::string token = parsed.substr(0, pos);
-  parsed.erase(0, pos + delim_len);
-  
-  return token;
+  unsigned int pos = parsed.find(delimiter);
+  if (pos != std::string::npos)
+  {
+    std::string token = parsed.substr(0, pos);
+    parsed.erase(0, pos + delim_len);
+      
+    return token;
+  }
+  return parsed;
 }
 
 int remap(int size, int num)
@@ -116,7 +120,7 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
     pos = std::stoi(help); // And one more number that isn't ended with comma
     
     #ifdef DEBUG
-    std::cerr << pos << std::endl;
+    std::cerr << "idempotent: " << pos << std::endl;
     #endif
     
     nonarchs.push_back(ElementCreator::getInstance().getElementPtr(remap(size,pos), *ret));
@@ -137,12 +141,22 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
     {
       token.erase(0,2);
       
-      #ifdef DEBUG
+      #ifdef VERBOSE
       std::cerr << token << std::endl;
       #endif
       
       help = nextDelim(token, delim_comma);
       int left = std::stoi(help);
+      
+      #ifdef VERBOSE
+      std::cerr << token << std::endl;
+      #endif
+      
+      bool twoVersion = false;
+      if (token.find(delim_comma) == std::string::npos)
+      {
+	twoVersion = true;
+      }
       
       help = nextDelim(token, delim_comma);
       int right = std::stoi(help);
@@ -151,7 +165,11 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
 		      ElementCreator::getInstance().getElementPtr(remap(size, right), *ret)
       );
       
-      int op_res = std::stoi(token);
+#ifdef VERBOSE
+      std::cerr << "remains: " << token << std::endl;
+#endif
+      
+      int op_res = twoVersion ? ret->getSize() - 2 : std::stoi(token);
       #ifdef DEBUG
       std::cerr << "Left: " << left << ", right: " << right << " = " << op_res << std::endl;
       #endif
