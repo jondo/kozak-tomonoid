@@ -4,6 +4,7 @@ var current_tomo = 1;
 var tomonoid_ids = new Object();
 var freed = true;
 var left_in_cols = true;
+var children_ids = new Object();
 
 function getPos(id)
 {
@@ -75,10 +76,14 @@ function readInner(num) {
 		}
 		freed = false;	
 	}
-	
-	var table = readTomonoid(tomonoid_ids[all_tomonoids.tomonoids[num - 1].id]);
+	var tomonoid = all_tomonoids.tomonoids[num - 1];
+	var table = readTomonoid(tomonoid_ids[tomonoid.id]);
 	var node = document.getElementById('output');
 	node.innerHTML = tablefy(table);
+	var next = document.getElementById('parent');
+	var parid = tomonoid.previd;
+	var txt = parid == 0 ? 'This is root tomonoid of the file.' : parid;
+	next.innerHTML = '<b>Parent:</b> ' + txt;
 	currentTomo = num;
 };
 
