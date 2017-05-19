@@ -458,67 +458,12 @@ int main(int argc, char **argv) {
   {
     std::cerr << "Running only in one thread (use -multi)" << std::endl;
     begin(beginningTmo, fs, 1);
-    //delete beginningTmo;
-    
-    /*Tomonoid *t8 = new Tomonoid(t7);
-    
-    std::shared_ptr<const Element> a = ElementCreator::getInstance().getElementPtr(1, t8->getSize());
-    std::shared_ptr<const Element> b = ElementCreator::getInstance().getElementPtr(2, t8->getSize());
-    std::shared_ptr<const Element> c = ElementCreator::getInstance().getElementPtr(3, t8->getSize());
-    std::shared_ptr<const Element> z = ElementCreator::getInstance().getElementPtr(8, t8->getSize());
-    std::map<TableElement, std::shared_ptr<const Element>> res;
-    
-    res.insert(std::make_pair(TableElement(a,z),a));
-    res.insert(std::make_pair(TableElement(b,z),a));
-    res.insert(std::make_pair(TableElement(c,z),a));
-    
-    t8->setImportantResults(res);
-    tp.printTomonoid(t8);
-    
-    t7->save(1,0,fs);*/
-    
-    /*Tomonoid *t8 = new Tomonoid(beginningTmo);
-    Tomonoid *t9 = new Tomonoid(t8);
-    
-    std::shared_ptr<const Element> r = ElementCreator::getInstance().getElementPtr(1, t9->getSize());
-    std::shared_ptr<const Element> s = ElementCreator::getInstance().getElementPtr(1, t8->getSize());
-    std::shared_ptr<const Element> t = ElementCreator::getInstance().getElementPtr(2, t8->getSize());
-    std::shared_ptr<const Element> u = ElementCreator::getInstance().getElementPtr(3, t8->getSize());
-    std::shared_ptr<const Element> x = ElementCreator::getInstance().getElementPtr(6, t8->getSize());
-    std::shared_ptr<const Element> z = ElementCreator::getInstance().getElementPtr(8, t8->getSize());
-    std::map<TableElement, std::shared_ptr<const Element>> res;
-    
-    res.insert(std::make_pair(TableElement(r,z),r));
-    res.insert(std::make_pair(TableElement(s,z),r));
-    res.insert(std::make_pair(TableElement(t,z),r));
-    res.insert(std::make_pair(TableElement(u,z),r));
-    
-    res.insert(std::make_pair(TableElement(z,r),r));
-    res.insert(std::make_pair(TableElement(z,s),r));
-    res.insert(std::make_pair(TableElement(z,t),r));
-    res.insert(std::make_pair(TableElement(z,u),r));
-    res.insert(std::make_pair(TableElement(x,x),r));
-    
-    t9->setImportantResults(res);
-    tp.printTomonoid(t9);
-    
-    beginningTmo->save(1,0,fs);
-    t8->save(2,1,fs);
-    
-    //calcNext(t8, 1, tp, fs, 2, 1);
-    calcNext(t9, 1, tp, fs, 3, 2);
-    delete t8;
-    //calcNext(new  Tomonoid(),1,tp,fs,1,0);
-    delete beginningTmo;*/
   }
   else
   {
     std::cerr << "Running multi-threads" << std::endl;
     begin(beginningTmo, fs, hardware_concurr);
-    //delete beginningTmo;
   }
-  
-  //delete t2;
   
   std::vector<std::string>::iterator it = toWrite.begin();
   
