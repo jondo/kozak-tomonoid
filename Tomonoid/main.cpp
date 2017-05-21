@@ -402,6 +402,17 @@ Tomonoid* control_reader()
   tp.printTomonoid(t);
   #endif
   
+  #ifdef VERBOSE // check out hash function
+  const Tomonoid::results_map &container = t->getResults();
+  unsigned nbuckets = container.bucket_count();
+
+  std::cerr << "Results map has " << nbuckets << " buckets:\n";
+
+  for (unsigned i=0; i<nbuckets; ++i) {
+    std::cout << "bucket #" << i << " has " << container.bucket_size(i) << " elements.\n";
+  }
+  #endif
+  
   return t;
 }
 
