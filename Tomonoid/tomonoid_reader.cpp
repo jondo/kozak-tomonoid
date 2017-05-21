@@ -45,6 +45,7 @@ Tomonoid* TomonoidReader::readId(unsigned int id)
     throw std::logic_error("Duplicate IDs.");
   }
   Tomonoid *tres = buildTomonoid(sm.str(0));
+  
   return tres;
 }
 
@@ -109,10 +110,18 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
     token.erase(0,1); // [ Opening bracket
     std::string help; // If there's exactly one nonarch
     
+    #ifdef VERBOSE
+      std::cerr << token << std::endl;
+      #endif
+    
     while (pos = token.find(delim_comma) != std::string::npos)
     {
-      help = token.substr(0, pos);
-      token.erase(0, pos + 1);
+      help = token.substr(0, pos + 1);
+      token.erase(0, pos + 2);
+      #ifdef VERBOSE
+      std::cerr << help << std::endl;
+      std::cerr << token << std::endl;
+      #endif
       int val = std::stoi(help);
       nonarchs.push_back(ElementCreator::getInstance().getElementPtr(remap(size,val), *ret));
     }
