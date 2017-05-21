@@ -122,12 +122,22 @@ void Tomonoid::calcAssociatedPs(associated_mapset &res)
   int topPos = this->size - 2;
   int knownQColEnd = 0;
   
+#ifdef VERBOSE
+  if (maxNonarchimedean != topPos + 1)
+  {
+    std::cerr << "maxNonarch: " << maxNonarchimedean << std::endl;
+     
+  }
+#endif
+  
   // TODO skipping 
   for (int a = topPos; a > 0; a--)
   {
     std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a, this->size);
     
-    for (int b = topPos; b > knownQColEnd; b--)
+    int startB = a >= maxNonarchimedean ? maxNonarchimedean - 1 : topPos;
+    
+    for (int b = startB; b > knownQColEnd; b--)
     {
       std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b, this->size);
       const Element& ab = this->getResult(TableElement(aPtr, bPtr));
@@ -294,7 +304,7 @@ std::vector<Tomonoid*> Tomonoid::calculateExtensions()
   if (!onlyArchimedean)
   {
     Tomonoid* nonarch = new Tomonoid(this);
-    nonarch->setTopIdempotent(false);
+    nonarch->setTopNotIdempotent(false);
     extensions.push_back(nonarch);
   }
   
@@ -313,16 +323,16 @@ void Tomonoid::fakeResults(std::shared_ptr<const Element> smallest, std::shared_
 				 (lalo, mrkev));
 }  
 
-bool Tomonoid::isTopIdempotent() const
+bool Tomonoid::isTopNotIdempotent() const
 {
-  return topIdempotent;
+  return topNotIdempotent;
 }
 
-void Tomonoid::setTopIdempotent(bool isArchimedean)
+void Tomonoid::setTopNotIdempotent(bool topNotIdem)
 {
-  if (isArchimedean != this->topIdempotent)
+  if (topNotIdem != this->topNotIdempotent)
   {
-    if (isArchimedean) // == true -> we're switching from nonarchimedean case back to archimedean
+    if (topNotIdem) // == true -> we're switching from nonarchimedean case back to archimedean
     {
 	this->nonarchs.pop_back();
     }
@@ -332,14 +342,14 @@ void Tomonoid::setTopIdempotent(bool isArchimedean)
       this->nonarchs.push_back(atom);
 	
     }
-    this->topIdempotent = isArchimedean;
+    this->topNotIdempotent = topNotIdem;
     calculateMaxNonarchimedean();
   }
 }
 
 void Tomonoid::calculateMaxNonarchimedean()
 {
-  if (!this->topIdempotent)
+  if (!this->topNotIdempotent) // least element IS idempotent
   {
     this->maxNonarchimedean = 1;
   }
@@ -353,14 +363,15 @@ void Tomonoid::calculateMaxNonarchimedean()
     }
     else
     {
-      this->maxNonarchimedean = this->size - 1;
-      for (int i = 2; i < this->size - 1; i++)
+      this->maxNonarchimedean = this->size - 1; // jakoze 1
+      for (auto it = nonarchs.begin(); it != nonarchs.end(); ++it)
       {
-	std::shared_ptr<const Element> bla = ElementCreator::getInstance().getElementPtr(i, *this);
-	const Element& res = this->getResult(bla, bla);
-	if (res == *(bla.get()))
+	std::shared_ptr< const Element > narch = *it;
+	unsigned int order = this->size - (*narch).getOrder() - 1;
+	this->maxNonarchimedean = std::min(order, this->maxNonarchimedean);
+	if (order == 1)
 	{
-	  this->maxNonarchimedean = i;
+	  this->topNotIdempotent = false;
 	  break;
 	}
       }
@@ -371,6 +382,7 @@ void Tomonoid::calculateMaxNonarchimedean()
 void Tomonoid::setNonarchimedeanArray(std::vector< std::shared_ptr< const Element > > nonarchs)
 {
   this->nonarchs = nonarchs;
+  calculateMaxNonarchimedean();
 }
 
 
@@ -390,7 +402,7 @@ const Element& Tomonoid::getResult(const TableElement& element) const
     if (previous != NULL)
     {
       // We have to look further
-      if (topIdempotent)
+      if (topNotIdempotent)
       {
 	if (*(left.get()) != *(atom.get()) && *(right.get()) != *(atom.get()) )
 	// we're not in last column or row
@@ -432,7 +444,7 @@ const Element& Tomonoid::getResult(const TableElement& element) const
       // Calculate result in respect to known archimedeanicities...
       if (nonarchs.empty() )
       {
-	if (topIdempotent) 
+	if (topNotIdempotent) 
 	{
 	  return Element::bottom_element;
 	}
@@ -463,7 +475,7 @@ const Element& Tomonoid::getResult(const TableElement& element) const
 	
 	if (nearestBigger < 0)
 	{
-	  return this->topIdempotent ? Element::bottom_element : *(atom.get());
+	  return this->topNotIdempotent ? Element::bottom_element : *(atom.get());
 	}
 	else
 	{
@@ -585,7 +597,7 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
   {
     if (previd != 0)
     {
-      if (!topIdempotent)
+      if (!topNotIdempotent)
       {
 	sstr << ElementCreator::getInstance().getElement(1, this->size).getOrder();
       }
@@ -772,7 +784,7 @@ void Tomonoid::save(unsigned int id, unsigned int previd, std::ostream& os)
 
 bool operator==(const Tomonoid& left, const Tomonoid& right)
 {
-  if (left.getSize() != right.getSize() || left.isTopIdempotent() != right.isTopIdempotent())
+  if (left.getSize() != right.getSize() || left.isTopNotIdempotent() != right.isTopNotIdempotent())
   {
     return false;
   }

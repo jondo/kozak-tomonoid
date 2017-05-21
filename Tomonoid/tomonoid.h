@@ -150,7 +150,7 @@ public: // so we can see them...
   
 private:
   
-  bool topIdempotent = true; /**< Is tomonoid archimedean? */
+  bool topNotIdempotent = true; /**< Is tomonoid archimedean? */
   unsigned int size; /**< Number of elements (including top and bottom ones). */
   /**
    * Lowest element that is non-archimedean (e*e = e). 
@@ -352,9 +352,9 @@ public:
   
   unsigned int getSize() const {return size;}
   
-  void setTopIdempotent(bool);
+  void setTopNotIdempotent(bool);
   
-  bool isTopIdempotent() const;
+  bool isTopNotIdempotent() const;
   
   unsigned int getMaxNonarchimedean();
   

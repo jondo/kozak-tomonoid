@@ -113,7 +113,7 @@ Tomonoid* TomonoidReader::buildTomonoid(const std::string& sub)
     #ifdef VERBOSE
       std::cerr << token << std::endl;
       #endif
-    
+      
     while (pos = token.find(delim_comma) != std::string::npos)
     {
       help = token.substr(0, pos + 1);
