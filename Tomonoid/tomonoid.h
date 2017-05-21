@@ -142,10 +142,13 @@ namespace std
 
 class Tomonoid 
 {
+public: // so we can see them...
   typedef std::vector<TableElement> associated_values;
   typedef std::unordered_map<TableElement, std::shared_ptr<const Element>> results_map;
   typedef std::vector<associated_values> all_associated_elements;
   typedef std::map<TableElement, std::set<TableElement>> associated_mapset;
+  
+private:
   
   bool topIdempotent = true; /**< Is tomonoid archimedean? */
   unsigned int size; /**< Number of elements (including top and bottom ones). */
