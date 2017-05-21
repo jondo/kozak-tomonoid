@@ -699,17 +699,6 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
 	if (max < rightOrder)
 	{
 	  arr[col] = rightOrder;
-	  /*for (int k = col + 1; k < resultOrder; ++k)
-	  {
-	    if (arr[k] < rightOrder)
-	    {
-	      arr[k] = rightOrder;
-	    }
-	    else
-	    {
-	      break;
-	    }
-	  }*/
 	}
       }
       
@@ -717,11 +706,17 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
       {
 	int* arr = (*it).second;
 	int resultOrder = (*it).first;
+#ifdef DEBUG
+	std::cerr << "resultOrder: " << resultOrder << std::endl;
+#endif 
 	
 	int control = 0;
 	for (int i = 0; i < resultOrder; ++i)
 	{
 	  int compare = arr[i];
+	  #ifdef DEBUG
+	std::cerr << "i: " << i << ", compare: " << compare << std::endl;
+#endif 
 	  if (compare > control)
 	  {
 	    if (!start)
@@ -731,8 +726,11 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
 	    start = false;
 	    control = compare;
 	    int leftNumber = resultOrder - i;
+#ifdef DEBUG
 	    std::cerr << "[" << leftNumber << "," << compare << "," << resultOrder << "]" << std::endl;
-	    if (control == resultOrder)
+#endif
+	    sstr << "[" << leftNumber << "," << compare << "," << resultOrder << "]";
+	    if (compare == resultOrder) 
 	    {
 	      break;
 	    }
