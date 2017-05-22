@@ -150,7 +150,7 @@ public: // so we can see them...
   
 private:
   
-  bool topNotIdempotent = true; /**< Is tomonoid archimedean? */
+  bool leastNotIdempotent = true; /**< Is tomonoid archimedean? */
   unsigned int size; /**< Number of elements (including top and bottom ones). */
   /**
    * Lowest element that is non-archimedean (e*e = e). 
@@ -340,7 +340,7 @@ public:
   
   const std::vector<std::shared_ptr<const Element>>& getNonarchimedeanArray() const {return this->nonarchs;};
   
-  std::vector< Tomonoid* > calculateExtensions();
+  std::vector< Tomonoid* >* calculateExtensions();
   
   const results_map& getResults() const {return this->importantResults;};
   
@@ -356,9 +356,9 @@ public:
   
   unsigned int getSize() const {return size;}
   
-  void setTopNotIdempotent(bool);
+  void setLeastNotIdempotent(bool);
   
-  bool isTopNotIdempotent() const;
+  bool isLeastNotIdempotent() const;
   
   unsigned int getMaxNonarchimedean();
   

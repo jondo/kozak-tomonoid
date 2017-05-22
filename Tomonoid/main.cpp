@@ -256,21 +256,21 @@ void calcNextCall(NextCall *nc)
     return;
   }
   // Calculate extensions
-  std::vector<Tomonoid*> next_exts = curr_tomo->calculateExtensions();
+  std::vector<Tomonoid*> *next_exts = curr_tomo->calculateExtensions();
   
   // Get IDs for saving
   next_id_mut.lock();
   unsigned int newid = next_id;
-  next_id += next_exts.size();
+  next_id += next_exts->size();
   next_id_mut.unlock();
   
   // Remember tomonoid for deleting
   TomoCount *tc = nc->currentTomo;
-  tc->count = next_exts.size();
+  tc->count = next_exts->size();
   
   del_check_mut.lock();
   
-  unsigned int sz = next_exts.size();
+  unsigned int sz = next_exts->size();
   unsigned int tosz = curr_tomo->getSize() + 1;
   levelTomos[tosz] += sz;
   
@@ -278,7 +278,7 @@ void calcNextCall(NextCall *nc)
   del_check_mut.unlock();
   
   // Push all tomonoids to queue (Don't forget to lock it)
-  for (std::vector<Tomonoid*>::iterator it = next_exts.begin(); it != next_exts.end(); ++it)
+  for (std::vector<Tomonoid*>::iterator it = next_exts->begin(); it != next_exts->end(); ++it)
   {
     created++;
     TomoCount *newcount = new TomoCount();
@@ -294,6 +294,8 @@ void calcNextCall(NextCall *nc)
   }
   
   delete nc;
+  
+  delete next_exts;
   
   cv.notify_all(); // signal to possible waiters to wake
 }
@@ -319,17 +321,18 @@ unsigned int calcNext(Tomonoid *next, int iter, TomonoidPrinter &tp, std::ostrea
     finalized++;
     return nextId;
   }
-  std::vector<Tomonoid*> nextos = next->calculateExtensions();
+  std::vector<Tomonoid*> *nextos = next->calculateExtensions();
   //vecOfVec.insert(nextos);
-  unsigned int sz = nextos.size();
+  unsigned int sz = nextos->size();
   unsigned int tosz = next->getSize() + 1;
   levelTomos[tosz] += sz;
   
-  for (std::vector<Tomonoid*>::iterator it = nextos.begin(); it != nextos.end(); ++it)
+  for (std::vector<Tomonoid*>::iterator it = nextos->begin(); it != nextos->end(); ++it)
   {
     nextId = calcNext(*it, iter + 1, tp, os, nextId, id);
     delete *it;
   }
+  delete nextos;
   return nextId;
 }
 
