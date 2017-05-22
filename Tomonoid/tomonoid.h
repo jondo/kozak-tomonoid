@@ -193,6 +193,8 @@ private:
   //void deleteAssociatedResults();
   void deleteHelpArrays();
   
+  void setCommutativity(Tomonoid::associated_mapset& res);
+  
   void validPermutations(std::vector< Tomonoid* >& res, 
 			 std::set< std::set< TableElement >* >& ptrset,
 			 Tomonoid* zeroTom, 
@@ -331,6 +333,8 @@ public:
   Tomonoid(const Tomonoid&);
   Tomonoid(Tomonoid*);
   ~Tomonoid();
+  
+  bool checkCommutativity();
   
   void setNonarchimedeanArray(std::vector<std::shared_ptr<const Element>>);
   

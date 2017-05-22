@@ -85,14 +85,6 @@ void Tomonoid::findIdempotents(std::vector< Element >& vec)
 inline unsigned int Tomonoid::calcStart(unsigned int j)
 {
   return j > this->maxNonarchimedean ? this->maxNonarchimedean - 1 : j;
-  /*if (j > this->maxNonarchimedean)
-  {
-    return this->maxNonarchimedean - 1;
-  }
-  else
-  {
-    return j;
-  }*/
 }
 
 void Tomonoid::insertAssociated(associated_mapset::iterator& mapped, TableElement& key, TableElement& in_set, associated_mapset& res)
@@ -111,6 +103,56 @@ void Tomonoid::insertAssociated(associated_mapset::iterator& mapped, TableElemen
   }
 }
 
+bool Tomonoid::checkCommutativity()
+{
+  for (int a = 1; a < this->size - 1; ++a)
+  {
+    std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a, this->size);
+    for (int b = this->size - 2; b > a; --b)
+    {
+      std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b, this->size);
+      TableElement ab(aPtr, bPtr);
+      TableElement ba(bPtr, aPtr);
+      const Element& abRes = this->getResult(ab);
+      const Element& baRes = this->getResult(ba);
+      
+      if ( abRes != baRes )
+      {
+	std::cerr << "Commutativity check:" << std::endl;
+	std::cerr << ab << " = " << abRes << ", but " << ba << " = " << baRes << std::endl;
+	return false;
+      }
+    }
+  }
+  return true;
+}
+
+void Tomonoid::setCommutativity(associated_mapset &res)
+{
+  const unsigned int next_sz = this->size + 1;
+  for (int a = 1; a < next_sz - 2; ++a) //no need to check also last column
+  {
+    std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a, next_sz);
+    for (int b = a + 1; b <= next_sz - 2; ++b)
+    {
+      std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b, next_sz);
+      TableElement ab(aPtr, bPtr);
+      TableElement ba(bPtr, aPtr);
+      if (this->getResult(ab) == Element::bottom_element)
+      {
+	    associated_mapset::iterator abit = res.find(ab);
+	    associated_mapset::iterator bait = res.find(ba);
+	    
+	    insertAssociated(abit, ab, ba, res);
+	    insertAssociated(bait, ba, ab, res);
+      }
+      else
+      {
+	break; //monotonicity - all elements above this one are in P so out of interest
+      }
+    }
+  }
+}
 
 /*
  * Calculates step 5 of algorithm.
@@ -283,6 +325,10 @@ std::vector<Tomonoid*> Tomonoid::calculateExtensions()
   //std::cout << "findPs" << std::endl;
   calcAssociatedPs(*associatedValues);
   //std::cout << "findPs end" << std::endl;
+  if (onlyCommutative) 
+  {
+    setCommutativity(*associatedValues); 
+  }
   
   calculateQs();
   
@@ -645,17 +691,6 @@ std::string Tomonoid::saveString(unsigned int id, unsigned int previd)
 	if (max < rightOrder)
 	{
 	  columnMaxs[col] = rightOrder;
-	  /*for (int k = col + 1; k < this->size - 2; ++k)
-	  {
-	    if (columnMaxs[k] < rightOrder)
-	    {
-	      columnMaxs[k] = rightOrder;
-	    }
-	    else
-	    {
-	      break;
-	    }
-	  }*/
 	}
       }
       

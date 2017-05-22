@@ -26,7 +26,7 @@ std::vector<Tomonoid> mults;
 std::map<unsigned int, unsigned int> levelTomos;
 
 int startLevel = 2;
-int maxLevels = 10;
+int maxLevels = 5;
 
 std::mutex stack_mutex;
 std::mutex next_id_mut;
@@ -454,10 +454,20 @@ int main(int argc, char **argv) {
     beginningTmo = new Tomonoid();
   }
   
+  if (onlyCommutative)
+  {
+    if (!beginningTmo->checkCommutativity() )
+    {
+      std::cerr << "Input tomonoid must be commutative. Terminating program." << std::endl;
+      return -1;
+    }
+  }
+  
   std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
   
-  unsigned int hardware_concurr = std::thread::hardware_concurrency();  
+  unsigned int unsigned_1 = 1;
+  unsigned int hardware_concurr = std::max(unsigned_1, std::thread::hardware_concurrency());  
   
   #ifdef DEBUG
   std::cout << "So concurr is " << hardware_concurr << std::endl;
@@ -502,7 +512,7 @@ int main(int argc, char **argv) {
   
   for (std::map<unsigned int, unsigned int>::iterator it = levelTomos.begin(); it != levelTomos.end(); ++it)
   {
-    std::cout << "In level " << (*it).first << " there are " << (*it).second << " tomonoids" << std::endl;
+    std::cout << "There are " << (*it).second << " tomonoids of size " << (*it).first << std::endl;
   }
   
   //std::cout << "Created: " << created << ", deleted: " << deleted << ", finalized: " << finalized << std::endl;
@@ -522,12 +532,12 @@ void printHelp()
   const unsigned int width = 15;
   std::cerr << help << std::endl;
   std::cerr << std::setw(width) << std::left << "-a" << "Generate only archimedean monoids." << std::endl;
-  std::cerr << std::setw(width) << "-max [NUM]" 
+  std::cerr << std::setw(width) << "-max <NUM>" 
   << "Maximum levels of depth search (How many new elements to add at lowest level)." << std::endl;
-  std::cerr << std::setw(width) << "-o [FILENAME]" << "Name of output file (if not specified, generic file is created)." << std::endl;
-  std::cerr << std::setw(width) << "-i [FILENAME]" << "Name of input file (must be succeeded by -id)." << std::endl;
-  std::cerr << std::setw(width) << "-id [ID]" << "ID of root tomonoid for current session." << std::endl;
-  std::cerr << std::setw(width) << "-multi" << "Enable multi-threading." << std::endl;
+  std::cerr << std::setw(width) << "-o <FILENAME>" << "Name of output file (if not specified, generic file is created)." << std::endl;
+  std::cerr << std::setw(width) << "-i <FILENAME>" << "Name of input file (must be succeeded by -id)." << std::endl;
+  std::cerr << std::setw(width) << "-id <ID>" << "ID of root tomonoid for current session." << std::endl;
+  std::cerr << std::setw(width) << "-multi [<THREADS>]" << "Enable multi-threading. If THREADS is specified, execute program in specified number of threads." << std::endl;
   std::cerr << std::setw(width) << "-optsave" << "Optimize saving (produces lesser output files, but execution may take more time)." << std::endl;
 }
 
@@ -545,7 +555,7 @@ void readArgs(int argc, char** argv)
     {
 	onlyCommutative = true;
 	// When only commutative option will work...
-	//std::cerr << "Only commutative tomonoids will be generated." << std::endl;
+	std::cerr << "Only commutative tomonoids will be generated." << std::endl;
     }
     else if (command =="-max") // Maximum depth
     {
@@ -556,13 +566,13 @@ void readArgs(int argc, char** argv)
 	}
 	std::string num(argv[i]);
 	try {
-	  maxLevels = std::stoi(num);
+	  maxLevels = std::stoi(num) + 1;
 	} 
 	catch (std::invalid_argument)
 	{
 	  throw std::invalid_argument("Maximum level (-max) argument must be succeeded by positive integer, found \"" + num + "\".");
 	}
-	if (maxLevels < 1)
+	if (maxLevels < 2)
 	{
 	  throw std::invalid_argument("Maximum level (-max) must be greater than 0.");
 	}
@@ -713,91 +723,6 @@ void TomonoidPrinter::printTomonoid(Tomonoid* tomo)
     
 }
 
-// ASI THRASH
-static const int vrcholy_count = 6;
-static int hrany_odkaz[] = {0,-1,1,3,-1,-1};
-static int sousedu[] = {1,0,2,1,0,0};
-static int hrany[] = {2,3,5,5};
-static bool zabarvena_komponenta[vrcholy_count];
-static int forced_turn[vrcholy_count]; // aka kdy naposled byl vrchol forcovan do jednicky :)
-static int zdroje[] = {0,-1};//{0,1,4,-1};
-static int zdroje_len = 1;
-static int print_order = 0;
-  
-void print_it()
-{
-  std::cout << print_order << ": ";
-    for (int i = 0; i < vrcholy_count; i++)
-    {
-      std::cout << zabarvena_komponenta[i];
-    }
-    std::cout << std::endl;
-    print_order++;
-}
-
-void permute_zdroje(int zdroj, int vrchol, bool force)
-{
-  if (zdroj == zdroje_len)
-  {
-    print_it();
-  }
-  else
-  {
-    if (vrchol == zdroje[zdroj])
-    {
-      permute_zdroje(zdroj + 1, zdroje[zdroj + 1], false);
-      
-      int odkaz_curr = hrany_odkaz[vrchol];
-      int ssedu = sousedu[vrchol];
-      for (int i = odkaz_curr; i < odkaz_curr + ssedu; i++)
-      {
-	permute_zdroje(zdroj, hrany[i], false);
-      }
-      
-      zabarvena_komponenta[vrchol] = true;
-      
-      for (int i = odkaz_curr; i < odkaz_curr + ssedu; i++)
-      {
-	permute_zdroje(zdroj, hrany[i], true);
-      }
-      // po forcu printuju tady, protoze musim pockat, az se to vse zpropaguje
-      print_it();
-      
-      permute_zdroje(zdroj + 1, zdroje[zdroj + 1], false);
-    }
-    else // jsme v nizsich oblastech
-    {
-      if (force && forced_turn[vrchol] != print_order)
-      {
-	// odpropaguju niz a nic nedelam
-	zabarvena_komponenta[vrchol] = true;
-	forced_turn[vrchol] = print_order;
-	
-	int odkaz_curr = hrany_odkaz[vrchol];
-	int ssedu = sousedu[vrchol];
-	for (int i = odkaz_curr; i < odkaz_curr + ssedu; i++)
-	{
-	  permute_zdroje(zdroj, hrany[i], true);
-	}
-      }
-      else if (!force)
-      {
-	
-      }
-    }
-  }
-}
-
-void check_graph_perm()
-{
-  for (int i = 0; i < vrcholy_count; i++)
-  {
-    zabarvena_komponenta[i] = false;
-  }
-  int start_vrchol = zdroje[0];
-  permute_zdroje(0, start_vrchol, false);
-}
-
 bool assocTest(Tomonoid *t)
 {
   int sz = t->getSize();
@@ -846,77 +771,6 @@ bool assocTest(Tomonoid *t)
       }
   }
   return ret;
-}
-  
-Tomonoid* createt9Tomo()
-{
-
-  Tomonoid *t7 = new Tomonoid(9);
-  std::shared_ptr<const Element> z = ElementCreator::getInstance().getElementPtr(7, *t7);
-  std::shared_ptr<const Element> y = ElementCreator::getInstance().getElementPtr(6, *t7);
-  std::shared_ptr<const Element> x = ElementCreator::getInstance().getElementPtr(5, *t7);
-  std::shared_ptr<const Element> w = ElementCreator::getInstance().getElementPtr(4, *t7);
-  std::shared_ptr<const Element> v = ElementCreator::getInstance().getElementPtr(3, *t7);
-  std::shared_ptr<const Element> u = ElementCreator::getInstance().getElementPtr(2, *t7);
-  std::shared_ptr<const Element> t = ElementCreator::getInstance().getElementPtr(1, *t7);
-  //std::vector<std::vector<Tomonoid*>> vecOfVecOfTomos;
-
-  std::unordered_map<TableElement, std::shared_ptr<const Element>> resmap;
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(v,z), v));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(v,y), v));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(y,x), v));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(y,w), v));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(y,v), v));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(z,v), v));
-  
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(w,z), w));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(w,y), w));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(x,y), w));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(z,w), w));
-  
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(x,z), x));
-  resmap.insert(std::pair<TableElement, std::shared_ptr<const Element>>(TableElement(z,x), x));
-  t7->setImportantResults(resmap);
-  
-  std::vector<std::shared_ptr<const Element>> nonarchs;
-  nonarchs.push_back(z);
-  nonarchs.push_back(y);
-  t7->setNonarchimedeanArray(nonarchs);
-  
-  TomonoidPrinter tp;
-  tp.printTomonoid(t7);
-  return t7;
-  
-}
-
-Tomonoid* create7tomo()
-{
-
-  Tomonoid *t2 = new Tomonoid(7);
-  
-  std::unordered_map<TableElement, std::shared_ptr<const Element>> ir;
-  std::shared_ptr<const Element> z = ElementCreator::getInstance().getElementPtr(5, *t2);
-  std::shared_ptr<const Element> y = ElementCreator::getInstance().getElementPtr(4, *t2);
-  std::shared_ptr<const Element> x = ElementCreator::getInstance().getElementPtr(3, *t2);
-  std::shared_ptr<const Element> w = ElementCreator::getInstance().getElementPtr(2, *t2);
-  std::shared_ptr<const Element> v = ElementCreator::getInstance().getElementPtr(1, *t2);
-  
-  TableElement te(x,z);
-  ir.insert(std::make_pair(te, v));
-  TableElement te2(y,z);
-  ir.insert(std::make_pair(te2, v));
-  TableElement te3(z,z);
-  ir.insert(std::make_pair(te3, w));
-  TableElement te4(z,y);
-  ir.insert(std::make_pair(te4, v));
-  
-  t2->setImportantResults(ir);
-  TomonoidPrinter tp;
-  tp.printTomonoid(t2);
-  
-  return t2;
-  //Tomonoid *t1 = new Tomonoid();
-  
 }
 
 void setOutputName()
