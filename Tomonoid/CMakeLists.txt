@@ -6,7 +6,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 add_executable(tomonoid strong_connectivity_finder.cpp tomonoid_assigning.cpp tomonoid_reader.cpp tomonoid.cpp element_creator.cpp table_element.cpp element.cpp main.cpp tomonoid_generating.cpp)
 
-
 find_package (Threads)
 target_link_libraries (tomonoid ${CMAKE_THREAD_LIBS_INIT})
 

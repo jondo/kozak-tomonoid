@@ -150,7 +150,7 @@ public: // so we can see them...
   
 private:
   
-  bool leastNotIdempotent = true; /**< Is tomonoid archimedean? */
+  bool atomNotIdempotent = true; /**< Is tomonoid archimedean? */
   unsigned int size; /**< Number of elements (including top and bottom ones). */
   /**
    * Lowest element that is non-archimedean (e*e = e). 
@@ -356,9 +356,9 @@ public:
   
   unsigned int getSize() const {return size;}
   
-  void setLeastNotIdempotent(bool);
+  void setAtomNotIdempotent(bool);
   
-  bool isLeastNotIdempotent() const;
+  bool isAtomNotIdempotent() const;
   
   unsigned int getMaxNonarchimedean();
   
@@ -423,6 +423,8 @@ public:
   const Element& getElement(unsigned int position, unsigned int tomonoidSize);
   const Element& getElement(unsigned int position, const Tomonoid& tomonoid);
   
+  unsigned int getSize();
+  
   // obsahuje assert, ze nevolame bottom/top element, ptz na ty shared_ptry nejsou
   // a ani nesmi byt...
   std::shared_ptr<const Element> getElementPtr(unsigned int, unsigned int);
@@ -430,7 +432,7 @@ public:
   
   std::shared_ptr<const Element> getElementPtr(const Element&);
   
-  void enlarge();
+  void enlarge(unsigned int by);
 };
 
 /**

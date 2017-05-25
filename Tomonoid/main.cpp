@@ -12,6 +12,8 @@
 #include <fstream>
 #include <queue>
 
+#include <dirent.h>
+
 #define NEW_CALLS 1
 #define WAIT 0
 #define ALL_DONE 2
@@ -111,6 +113,26 @@ struct NextCall
   
 };
 
+void checkDir(const std::string name)
+{
+  DIR* dir = opendir(name.c_str());
+  if (dir)
+  {
+      /* Directory exists. */
+      closedir(dir);
+  }
+  else if (ENOENT == errno)
+  {
+    std::string command = "mkdir " + name;
+      system(command.c_str());
+  }
+  else
+  {
+    std::string bla = "Cannot open directory" + name;
+      throw std::invalid_argument(bla);
+  }
+  }
+
 //std::stack<NextCall*> tomo_stack;
 std::priority_queue<NextCall*> tomo_stack;
 
@@ -120,9 +142,9 @@ void checkSave(std::ostream& os)
 {
   write_buf_mut.lock();
   
-  std::vector<std::string> strvec;
-  if (toWrite.size() > 200)
+  if (toWrite.size() > 500)
   {
+    std::vector<std::string> strvec;
     strvec.swap(toWrite);
     write_buf_mut.unlock();
     
@@ -419,8 +441,9 @@ Tomonoid* control_reader()
   return t;
 }
 
+std::string odir = "";
 bool help = false;
-
+int no_threads = -1;
 /*
  * Possible arguments.
  * -c = only commutative
@@ -486,7 +509,8 @@ int main(int argc, char **argv) {
   else
   {
     std::cerr << "Running multi-threads" << std::endl;
-    begin(beginningTmo, fs, hardware_concurr);
+    int arg = no_threads > 0 ? no_threads : hardware_concurr;
+    begin(beginningTmo, fs, arg);
   }
   
   std::vector<std::string>::iterator it = toWrite.begin();
@@ -544,8 +568,11 @@ void printHelp()
   std::cerr << std::setw(width) << "-optsave" << "Optimize saving (produces lesser output files, but execution may take more time)." << std::endl;
 }
 
+
+
 void readArgs(int argc, char** argv)
 {
+  bool oSet = false;
   for (int i = 1; i < argc; i++) // first argument is name of program
   {
     std::string command(argv[i]);
@@ -583,6 +610,11 @@ void readArgs(int argc, char** argv)
     }
     else if (command == "-o") // Output file
     {
+      if (oSet) 
+      {
+	throw std::invalid_argument("Output already set!");
+      }
+      oSet = true;
 	i++;
 	if (i >= argc)
 	{
@@ -661,6 +693,21 @@ void readArgs(int argc, char** argv)
     {
       multi = true;
       std::cerr << "Multi-threading enabled." << std::endl;
+      
+      i++;
+      if (i >= argc) 
+      {
+	return;
+      }
+      std::string input_val = std::string(argv[i]);
+      try {
+	no_threads = std::stoi(input_val);
+      }
+      catch (std::invalid_argument e) 
+      {
+	// atc like nothing
+	i--;
+      }
     }
     else if (command == "-optsave")
     {
@@ -671,6 +718,20 @@ void readArgs(int argc, char** argv)
     {
       printHelp();
       help = true;
+    }
+    else if (command == "-odir")
+    {
+      if (oSet) 
+      {
+	throw std::invalid_argument("Output already set!");
+      }
+      oSet = true;
+      i++;
+      if (i >= argc)
+      {
+	throw std::invalid_argument("Missing output directory name!");
+      }
+      odir = argv[i];
     }
     else // Unknown option
     {
@@ -781,9 +842,11 @@ void setOutputName()
   auto t = std::time(nullptr);
   auto tm = *std::localtime(&t);
   
-  //TODO co kdyz slozka output neexistuje?
+  std::string useName = odir != "" ? odir : "output";
+  
+  checkDir(useName);
   std::ostringstream oss;
-  oss << "output/";
+  oss << useName << "/";
   oss << std::put_time(&tm, "%d_%m_%Y_%H%M%S") << ".txt";
   outputName = oss.str();
 }

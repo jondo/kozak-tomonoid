@@ -46,9 +46,9 @@ const Element& ElementCreator::getElement(unsigned int position, const Tomonoid&
   return getElement(position, tomonoid.getSize());
 }
 
-void ElementCreator::enlarge()
+void ElementCreator::enlarge(unsigned int by)
 {
-  for (int i = this->size; i < ElementCreator::DEFAULT_SIZE + this->size; i++)
+  for (int i = this->size; i < this->size + by; ++i)
   {
     std::shared_ptr<Element> el = std::make_shared<Element>(i + 1, ORDINARY);
     elementsArray->push_back(el);
@@ -71,4 +71,9 @@ std::shared_ptr<const Element> ElementCreator::getElementPtr(unsigned int positi
 std::shared_ptr<const Element> ElementCreator::getElementPtr(unsigned int position, const Tomonoid& tomonoid)
 {
   return getElementPtr(position, tomonoid.getSize());
+}
+
+unsigned int ElementCreator::getSize()
+{
+  return this->size;
 }
