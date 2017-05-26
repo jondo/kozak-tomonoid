@@ -210,9 +210,7 @@ private:
 		 std::set< std::set< TableElement >* >& lockSets
 	      );
   
-  bool assignAtom(std::set<std::set<TableElement>*>&,
-		  std::unordered_map< TableElement, std::set< TableElement >* >&,
-		  Tomonoid*);
+  bool assignAtom(std::set< std::set< TableElement >* >& ptrset, std::unordered_map< TableElement, std::set< TableElement >* >& telToSet, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& prec, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& rev, Tomonoid* nextTomo);
   
   void findIdempotents(std::vector<Element>&);
   
@@ -258,8 +256,12 @@ private:
 		    std::unordered_set< std::set< TableElement >* >* toBeDeleted, 
 		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets);
   
+  void deleteFromSets(std::unordered_set< std::set< TableElement >* >* toBeDeleted, std::set< std::set< TableElement >* >& ptrset, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
+);
+  
   void nArchAssocCheck();
   bool controlAssociativity(const Element& el, const Element& er, associated_mapset& res, Tomonoid* next);
+  bool assignAtomRecursivePart(std::unordered_set< std::set< TableElement >* >* toBeDeleted, std::set< TableElement >* current, std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > prec, Tomonoid* nextTomo);
   
   class GraphAssignator 
   {

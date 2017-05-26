@@ -104,7 +104,6 @@ void Tomonoid::GraphAssignator::assignAtoms(associated_set* current, results_map
     rm->insert(std::make_pair(*it, atom));
   }
   auto sets_it = precededSets->find(current);
-  
   std::set<std::set<TableElement>*> *sets = (*sets_it).second;
   for (auto it = sets->begin(); it != sets->end(); ++it)
   {

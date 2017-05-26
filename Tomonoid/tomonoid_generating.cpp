@@ -94,6 +94,18 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
   {
     std::cerr << i << ": " <<  rowQEnds[i] << std::endl; 
   }
+  std::cerr << "AssociatedValues" << std::endl;
+  for (auto it = associatedValues.begin(); it != associatedValues.end(); ++it)
+  {
+    TableElement te = (*it).first;
+    std::set<TableElement> sett = (*it).second;
+    std::cerr << "associated with " << te << std::endl;
+    for (auto tt = sett.begin(); tt != sett.end(); ++tt)
+    {
+      TableElement t2 = *tt;
+      std::cerr << t2 << std::endl;
+    }
+  }
 #endif
   
   bool assocOk = controlAssociativity(el, er, associatedValues, nextTomo);
@@ -141,6 +153,19 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
   calcPrecedings(precededSets, revertSets, ptrset);
 
   #ifdef VERBOSE
+  
+  std::cerr << "PTRSETTT" << std::endl;
+  for (auto it = ptrset.begin(); it != ptrset.end(); ++it)
+  {
+    
+    std::set<TableElement> *ptr = *it;
+    std::cerr << "ANOTHER PTRSET CONSISTS OF THIS: " << ptr << std::endl;
+    for (auto aa = ptr->begin(); aa != ptr->end(); ++aa)
+    {
+      std::cerr << *aa << std::endl;
+    }
+  }
+  
  int kk = 0;
   std::cout << "after calcPrec rev" << std::endl;
   for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = revertSets.begin(); 
@@ -148,6 +173,7 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
   {
     std::cout << "Iteration " << kk << ", address: " << (*sit).first << std::endl;
     std::set<std::set<TableElement>*>* p2 = (*sit).second;
+    std::cout << p2->size() << std::endl;
     for (std::set<std::set<TableElement>*>::iterator eas = p2->begin(); eas != p2->end(); ++eas)
     {
       std::cout << "rev_adres: " << *eas << std::endl;
@@ -180,7 +206,7 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
 #endif
   
   // assign atoms to associated sets that have to result in atom only (and remove them)
-  bool atomsOk = assignAtom(ptrset, telToSet, nextTomo);
+  bool atomsOk = assignAtom(ptrset, telToSet, precededSets, revertSets, nextTomo);
   
   // actually delete those remaining associated sets, that must be zero, so in final we'll have 
   // only sets that might be assigned both atom or zero
@@ -211,10 +237,6 @@ void Tomonoid::calExtFromIdempots(std::vector<Tomonoid*>& res,
     delete nextTomo;
     return; // This is invalid.
   }
-  
-
-  
-
   
   assignZeros(ptrset, precededSets, revertSets);
   
@@ -881,13 +903,63 @@ void Tomonoid::controlFreeValues(associated_mapset& associatedValues)
   }
 }
 
+bool Tomonoid::assignAtomRecursivePart(std::unordered_set< std::set< TableElement >* >* toBeDeleted,
+			       std::set< TableElement >* current,
+			       std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* > prec,
+			       Tomonoid* nextTomo
+				      )
+{
+  if (toBeDeleted->find(current) != toBeDeleted->end() )
+      {
+	return true;
+      }
+      
+      toBeDeleted->insert(current);
+      std::shared_ptr<const Element> atomPtr = ElementCreator::getInstance().getElementPtr(1, this->size + 1);
+      
+      for (auto it = current->begin(); it != current->end(); ++it)
+      {
+	TableElement tbassigned = *it;
+	int tba_col = this->size - 1 - tbassigned.getLeft()->getOrder();
+	int tba_row = this->size - 1 - tbassigned.getRight()->getOrder();
+	if (zeroCol[tba_col] >= tba_row && zeroCol[tba_col] != NOT_PRESENT) 
+	{
+	  #ifdef DEBUG
+	  std::cerr << "assignAtom conflict in this tomonoid:" << std::endl;
+	  TomonoidPrinter tp;
+	  tp.printTomonoid(this);
+	  #endif
+	  return false;
+	}
+	else
+	{
+	  nextTomo->importantResults.insert(std::make_pair(tbassigned, atomPtr));
+
+	}
+      }
+      auto precIt = prec.find(current);
+      if (precIt != prec.end() )
+      {
+	std::set< std::set< TableElement >* > *lowers = precIt->second;
+	for (auto it = lowers->begin(); it != lowers->end(); ++it)
+	{
+	  std::set< TableElement > *nextCurr = *it;
+	  bool ok = assignAtomRecursivePart(toBeDeleted, nextCurr, prec, nextTomo);
+	  if (!ok) return false;
+	}
+      }
+  return true;
+}
+
 bool Tomonoid::assignAtom(std::set<std::set<TableElement>*>& ptrset,
 			  std::unordered_map< TableElement, std::set< TableElement >* >& telToSet,
+			  std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >& prec,
+			  std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >& rev,
 			  Tomonoid *nextTomo
 			  )
 {
+  std::unordered_set<std::set<TableElement>*> *toBeDeleted = new std::unordered_set<std::set<TableElement>*>();
   std::shared_ptr<const Element> atomPtr = ElementCreator::getInstance().getElementPtr(1, this->size + 1);
-  std::set<TableElement> atomsAssigned;
   // zacneme s nutnyma atomama
   for (int i = 0; i < this->size - 1; i++) // first column
   {
@@ -897,102 +969,55 @@ bool Tomonoid::assignAtom(std::set<std::set<TableElement>*>& ptrset,
       std::shared_ptr<const Element> left = ElementCreator::getInstance().getElementPtr(i + 1, this->size + 1);
       std::shared_ptr<const Element> right = ElementCreator::getInstance().getElementPtr(j + 1, this->size + 1);
       TableElement lrte(left, right);
-      if (atomsAssigned.count(lrte) == 0)
+      auto iterator = telToSet.find(lrte);
+      if (iterator == telToSet.end() )
       {
-	std::unordered_map<TableElement, std::set<TableElement>*>::iterator associt = telToSet.find(lrte);
-	nextTomo->importantResults.insert(std::pair<TableElement, std::shared_ptr<const Element>>(lrte, atomPtr) );
-	atomsAssigned.insert(lrte);
-	telToSet.erase(lrte);
-	if (associt != telToSet.end() )
-	{
-	  std::set<TableElement>* assoc_ptr = (*associt).second;
-	  for (std::set<TableElement>::iterator ptrit = assoc_ptr->begin(); ptrit != assoc_ptr->end(); ++ptrit)
-	  {
-	    const TableElement& tepp = *ptrit;
-	    const unsigned int left = tepp.getLeft().get()->getOrder();
-	    const unsigned int right = tepp.getRight().get()->getOrder();
-	    int leftPos = this->size - 1 - left;
-	    if (zeroCol[leftPos] >= this->size - 1 - right && zeroCol[leftPos] != NOT_PRESENT) // atom assignment intersects with zero area -> can't create this
-	    {
-	      #ifdef DEBUG
-	      std::cerr << "row " << this->size - 1 - left << " should be less than " << this->size - 1 - right << std::endl;
-	      #endif
-	      return false;
-	    }
-	    
-	    if (atomsAssigned.count(tepp) == 0)
-	    {
-	      atomsAssigned.insert(tepp);
-	      telToSet.erase(tepp);
-	      nextTomo->importantResults.insert(std::pair<TableElement, std::shared_ptr<const Element>>(tepp, atomPtr) );
-	    }
-	  }
-	  ptrset.erase(assoc_ptr);
-	//  std::cout << "deleting " << assoc_ptr << std::endl;
-	  delete assoc_ptr;
-	}
+	nextTomo->importantResults.insert(std::make_pair(lrte, atomPtr));
+	continue;
+      }
+      std::set<TableElement> *current = (*iterator).second;
+      bool ok = assignAtomRecursivePart(toBeDeleted, current, prec, nextTomo);
+      if (!ok)
+      {
+	delete toBeDeleted;
+	return false;
       }
     }
   }
+  
+  deleteFromSets(toBeDeleted, ptrset, prec, rev);
+  delete toBeDeleted;
   
   return true;
 }
 
 void Tomonoid::markToDelete(std::set<TableElement> *current,
 			    std::unordered_set<std::set<TableElement>*> *toBeDeleted,
-			    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
+			    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& orderSet
 )
 {
   if (toBeDeleted->find(current) == toBeDeleted->end())
   {
     toBeDeleted->insert(current);
-    auto rev_it = revertSets.find(current);
-    if (rev_it != revertSets.end() )
+    auto rev_it = orderSet.find(current);
+    if (rev_it != orderSet.end() )
     {
       std::set< std::set< TableElement >* > *value = (*rev_it).second;
       for (auto it = value->begin(); it != value->end(); ++it)
       {
 	std::set<TableElement> *next = *it;
-	markToDelete(next, toBeDeleted, revertSets);
+	markToDelete(next, toBeDeleted, orderSet);
       }
     }
   }
 }
 
-void Tomonoid::assignZeros(std::set<std::set<TableElement>*>& ptrset,
-			   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
-			   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
+void Tomonoid::deleteFromSets(std::unordered_set<std::set<TableElement>*> *toBeDeleted, 
+		    std::set<std::set<TableElement>*>& ptrset,
+		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
+		    std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
 )
 {
-  std::unordered_set<std::set<TableElement>*> *toBeDeleted = new std::unordered_set<std::set<TableElement>*>();
-  for (std::set<std::set<TableElement>*>::iterator ejty = ptrset.begin(); ejty != ptrset.end(); ++ejty)
-  {
-     std::set<TableElement>* setTel = *ejty;
-     if (toBeDeleted->find(setTel) != toBeDeleted->end())
-     {
-       // already marked to be deleted
-       continue;
-     }
-     //std::cout << "Checking setTel " << setTel << std::endl;
-     for (std::set<TableElement>::iterator teit = setTel->begin(); teit != setTel->end(); ++teit)
-     {
-	const TableElement& teref = *teit;
-	int left_or = teref.getLeft().get()->getOrder();
-	int right_or = teref.getRight().get()->getOrder();
-	int left_pos = posInHelpers(left_or);
-	int right_pos = posInHelpers(right_or);
-	
-	if (zeroCol[left_pos] != NOT_PRESENT && zeroCol[left_pos] >= right_pos)
-	{
-	  // this associated set is in zeroed area
-	  // so recursively mark all in revert sets to be deleted
-	  markToDelete(setTel, toBeDeleted, revertSets);
-	  
-	  break;
-	}
-     }
-  }
-  
   for (auto it = toBeDeleted->begin(); it != toBeDeleted->end(); ++it)
   {
     std::set<TableElement> *toDelptr = *it;
@@ -1034,6 +1059,44 @@ void Tomonoid::assignZeros(std::set<std::set<TableElement>*>& ptrset,
     
     delete toDelptr;
   }
+}
+
+void Tomonoid::assignZeros(std::set<std::set<TableElement>*>& ptrset,
+			   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
+			   std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets
+)
+{
+  std::unordered_set<std::set<TableElement>*> *toBeDeleted = new std::unordered_set<std::set<TableElement>*>();
+  for (std::set<std::set<TableElement>*>::iterator ejty = ptrset.begin(); ejty != ptrset.end(); ++ejty)
+  {
+     std::set<TableElement>* setTel = *ejty;
+     if (toBeDeleted->find(setTel) != toBeDeleted->end())
+     {
+       // already marked to be deleted
+       continue;
+     }
+     //std::cout << "Checking setTel " << setTel << std::endl;
+     for (std::set<TableElement>::iterator teit = setTel->begin(); teit != setTel->end(); ++teit)
+     {
+	const TableElement& teref = *teit;
+	int left_or = teref.getLeft().get()->getOrder();
+	int right_or = teref.getRight().get()->getOrder();
+	int left_pos = posInHelpers(left_or);
+	int right_pos = posInHelpers(right_or);
+	
+	if (zeroCol[left_pos] != NOT_PRESENT && zeroCol[left_pos] >= right_pos)
+	{
+	  // this associated set is in zeroed area
+	  // so recursively mark all in revert sets to be deleted
+	  markToDelete(setTel, toBeDeleted, revertSets);
+	  
+	  break;
+	}
+     }
+  }
+  
+  deleteFromSets(toBeDeleted, ptrset, precededSets, revertSets);
+  
   delete toBeDeleted;
 }
 
@@ -1223,13 +1286,18 @@ void Tomonoid::calcPrecedings(std::map< std::set< TableElement >*, std::set< std
 			      std::set<std::set<TableElement>*>& ptrset
  			    )
 {
-    
+#ifdef VERBOSE
+    std::cerr << "Entered CalcPrecedings" << std::endl;
+#endif
     //Tomonoid *fullOnes = new Tomonoid(*zeroTom); // COPY CONSTRUCTOR!
     //std::set<std::set<TableElement>*>::iterator ity = ptrset.begin();
     for (auto ity = ptrset.begin(); ity != ptrset.end(); ++ity) // for each associated set
     {
       std::set<TableElement>* setTel = (*ity);
       //std::cout << "calcprec: " << setTel << std::endl;
+#ifdef VERBOSE
+      std::cerr << "Now checking " << setTel << std::endl;
+#endif
       
       std::set<std::set <TableElement>* > *currentPrecSets = new std::set<std::set <TableElement>* >();
       precededSets.insert(std::make_pair(setTel, currentPrecSets) );
@@ -1244,6 +1312,11 @@ void Tomonoid::calcPrecedings(std::map< std::set< TableElement >*, std::set< std
 	{
 	  continue;
 	}
+	
+#ifdef VERBOSE
+	std::cerr << "Compare it with " << compTel << std::endl;
+#endif
+	
 	for (std::set<TableElement>::iterator origTels = setTel->begin(); origTels != setTel->end(); ++origTels)
 	{ // compare Elements from this set (setTel)
 	  const TableElement &first = *origTels;
@@ -1259,6 +1332,9 @@ void Tomonoid::calcPrecedings(std::map< std::set< TableElement >*, std::set< std
 	      && fr >= sr) // f must be lower or same row -> higher or equal order
 	    {
 	      currentPrecSets->insert(compTel);
+	      #ifdef VERBOSE
+		std::cerr << compTel << " is preceded by " << setTel << std::endl;
+		#endif
 	      
 	      std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >* >::iterator 
 		    revIt = revertSets.find(compTel);
@@ -1266,11 +1342,17 @@ void Tomonoid::calcPrecedings(std::map< std::set< TableElement >*, std::set< std
 	      {
 		std::set<std::set<TableElement>*>* revptr = new std::set<std::set<TableElement>*>();
 		revptr->insert(setTel);
-		revertSets.insert(std::pair<std::set<TableElement>*, std::set< std::set <TableElement>* >*>(compTel, revptr));
+		revertSets.insert(std::make_pair(compTel, revptr));
+		#ifdef VERBOSE
+		std::cerr << setTel << " is in revert set of " << compTel << std::endl;
+		#endif
 	      }
 	      else
 	      {
 		(*revIt).second->insert(setTel);
+		#ifdef VERBOSE
+		std::cerr << setTel << " is in revert set of " << compTel << std::endl;
+		#endif
 	      }
 	      
 	      goto checkNext; //we can break even outer for loop
@@ -1281,7 +1363,9 @@ void Tomonoid::calcPrecedings(std::map< std::set< TableElement >*, std::set< std
       }
       
     }
-  
+#ifdef VERBOSE
+    std::cerr << "Leaving CalcPrecedings" << std::endl;
+#endif
 }
 
 
@@ -1289,6 +1373,7 @@ void printAllInfo(std::set<std::set<TableElement>*>& ptrset,
 		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& precededSets, 
 		  std::map< std::set< TableElement >*, std::set< std::set< TableElement >* >* >& revertSets)
 {
+  std::cerr << "printAllInfo" << std::endl;
     int dd = 0;
     std::cerr << "ptrset:" << std::endl;
   for (std::set<std::set<TableElement>*>::iterator sit = ptrset.begin(); sit != ptrset.end(); ++sit)
@@ -1302,6 +1387,7 @@ void printAllInfo(std::set<std::set<TableElement>*>& ptrset,
   }
   
   int kl = 0;
+  std::cerr << "PRECEDED SETS" << std::endl;
   
   for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = precededSets.begin(); 
        sit != precededSets.end(); ++sit)
@@ -1315,6 +1401,9 @@ void printAllInfo(std::set<std::set<TableElement>*>& ptrset,
     kl++;
   }
   kl=0;
+  
+  std::cerr << "REVERT SETS" << std::endl;
+  
   for (std::map< std::set<TableElement>*, std::set< std::set <TableElement>* >*>::iterator sit = revertSets.begin(); 
        sit != revertSets.end(); ++sit)
   {

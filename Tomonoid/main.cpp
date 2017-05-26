@@ -167,7 +167,7 @@ void nthread_fct(int i, std::ostream& os)
   unsigned int iter = 1;
   while (true)
   {
-    if (iter % 1024 != 0)
+    if (iter % 4096 != 0)
     {
         stack_mutex.lock();
 	if (!tomo_stack.empty())
@@ -210,6 +210,7 @@ void nthread_fct(int i, std::ostream& os)
     }
     else
     {
+      std::cout << "Thread ID "<< std::this_thread::get_id() << ": "<< iter << std::endl;
       checkSave(os);
     }
     iter++;
@@ -255,6 +256,21 @@ void endReached(TomoCount *toc)
 
 unsigned int finalized = 0;
 
+#ifdef TEST
+
+bool assocTest(Tomonoid *t);
+bool TestTomonoid(Tomonoid *tomo)
+{
+  bool a = assocTest(tomo);
+  if (!a) 
+  {
+    std::cerr << "Associativity test failed!" << std::endl;
+    return false;
+  }
+  return true;
+}
+#endif
+
 void calcNextCall(NextCall *nc)
 {
   // SAVE PROCESSED TOMONOID
@@ -279,6 +295,19 @@ void calcNextCall(NextCall *nc)
   }
   // Calculate extensions
   std::vector<Tomonoid*> *next_exts = curr_tomo->calculateExtensions();
+  
+#ifdef TEST 
+  for (auto it = next_exts->begin(); it != next_exts->end(); ++it)
+  {
+    Tomonoid *tt = *it;
+    bool check = TestTomonoid(tt);
+    if (!check)
+    {
+      TomonoidPrinter tp;
+      tp.printTomonoid(tt);
+    }
+  }
+#endif
   
   // Get IDs for saving
   next_id_mut.lock();

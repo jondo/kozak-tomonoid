@@ -118,8 +118,10 @@ bool Tomonoid::checkCommutativity()
       
       if ( abRes != baRes )
       {
+#ifdef DEBUG
 	std::cerr << "Commutativity check:" << std::endl;
 	std::cerr << ab << " = " << abRes << ", but " << ba << " = " << baRes << std::endl;
+#endif
 	return false;
       }
     }
@@ -133,12 +135,18 @@ void Tomonoid::setCommutativity(associated_mapset &res)
   for (int a = 1; a < next_sz - 2; ++a) //no need to check also last column
   {
     std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a, next_sz);
+    #ifdef VERBOSE
+      std::cerr << *(aPtr.get()) << std::endl;
+    #endif
     for (int b = a + 1; b <= next_sz - 2; ++b)
     {
       std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b, next_sz);
+      #ifdef VERBOSE
+	std::cerr << "    " << *(bPtr.get()) << std::endl;
+      #endif
       TableElement ab(aPtr, bPtr);
       TableElement ba(bPtr, aPtr);
-      if (this->getResult(ab) == Element::bottom_element)
+      if ((!onlyArchimedean && a == 1) || this->getResult(ab) == Element::bottom_element)
       {
 	    associated_mapset::iterator abit = res.find(ab);
 	    associated_mapset::iterator bait = res.find(ba);
@@ -177,9 +185,7 @@ void Tomonoid::calcAssociatedPs(associated_mapset &res)
   {
     std::shared_ptr<const Element> aPtr = ElementCreator::getInstance().getElementPtr(a, this->size);
     
-    int startB = a >= maxNonarchimedean ? maxNonarchimedean - 1 : topPos;
-    
-    for (int b = startB; b > knownQColEnd; b--)
+    for (int b = topPos; b > knownQColEnd; b--)
     {
       std::shared_ptr<const Element> bPtr = ElementCreator::getInstance().getElementPtr(b, this->size);
       const Element& ab = this->getResult(TableElement(aPtr, bPtr));
@@ -200,7 +206,9 @@ void Tomonoid::calcAssociatedPs(associated_mapset &res)
 	
 	std::shared_ptr<const Element> dPtr = ElementCreator::getInstance().getElementPtr(ab);
 	
-	for (int c = topPos; c > 0; c--)
+	int startC = (a >= maxNonarchimedean) && (b >= maxNonarchimedean) ? maxNonarchimedean - 1 : topPos;
+	
+	for (int c = startC; c > 0; c--)
 	{
 	  std::shared_ptr<const Element> cPtr = ElementCreator::getInstance().getElementPtr(c, this->size);
 	  const Element& bc = this->getResult(bPtr, cPtr);
@@ -300,6 +308,10 @@ void Tomonoid::calculateQs()
 
 std::vector<Tomonoid*>* Tomonoid::calculateExtensions()
 {
+#ifdef CHECK
+  TomonoidPrinter tp;
+  tp.printTomonoid(this);
+#endif
   std::vector<Tomonoid*> *extensions = new std::vector<Tomonoid*>();
   
   // step 1: find idempotents (and insert them to this prepared vector)
